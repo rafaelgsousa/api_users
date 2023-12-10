@@ -3,7 +3,7 @@ from rest_framework.response import Response
 
 
 # Create your views here.
-@api_view(['POST'])
+@api_view()
 def sign_up(request):
     return Response(
         {
@@ -11,7 +11,7 @@ def sign_up(request):
         }
     )
 
-@api_view(['POST'])
+@api_view()
 def sign_in(request):
     return Response(
         {
@@ -19,7 +19,7 @@ def sign_in(request):
         }
     )
 
-@api_view(['PATCH'])
+@api_view()
 def logout(request):
     return Response(
         {
@@ -27,7 +27,7 @@ def logout(request):
         }
     )
 
-@api_view(['PATCH'])
+@api_view()
 def change_password(request):
     return Response(
         {
@@ -35,7 +35,7 @@ def change_password(request):
         }
     )
 
-@api_view(['GET'])
+@api_view()
 def get_user(request):
     return Response(
         {
@@ -43,7 +43,7 @@ def get_user(request):
         }
     )
 
-@api_view(['GET'])
+@api_view()
 def get_users(request):
     return Response(
         {
@@ -51,7 +51,7 @@ def get_users(request):
         }
     )
 
-@api_view(['PATCH'])
+@api_view()
 def update_user(request):
     return Response(
         {
@@ -59,7 +59,7 @@ def update_user(request):
         }
     )
 
-@api_view(['PATCH'])
+@api_view()
 def inactive_user(request):
     return Response(
         {
@@ -67,7 +67,7 @@ def inactive_user(request):
         }
     )
 
-@api_view(['DELETE'])
+@api_view()
 def delete_user(request):
     return Response(
         {
