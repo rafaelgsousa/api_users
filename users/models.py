@@ -32,4 +32,4 @@ class User(models.Model):
     login_erro = models.IntegerField(choices=LoginError.choices, default=LoginError.ZERO)
     created_at = models.DateTimeField(auto_now_add=True)
     update_at = models.DateTimeField(auto_now=True)
-    last_login = models.DateTimeField(auto_now=True, blank=True, null=True)
+    last_login = models.DateTimeField(blank=True, null=True)
