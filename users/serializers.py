@@ -6,13 +6,11 @@ from rest_framework.authtoken.models import Token
 from .models import Device, User
 
 
-class UserSerializer (serializers.Serializer):
-    first_name = serializers.CharField(max_length=50)
-    last_name = serializers.CharField(max_length=50)
-    email = serializers.EmailField(max_length=100)
-    phone = serializers.CharField(max_length=20)
-    password = serializers.CharField(max_length=100)
-    picture = serializers.ImageField(required=False)
+class UserSerializer (serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email', 'phone', 'password', 'picture', 'login_erro', 'is_logged_in']
+        # fields = '__all__'
 
     def create(self, validated_data):
         # Crie um novo usuário com os dados validados
@@ -29,39 +27,10 @@ class UserSerializer (serializers.Serializer):
         )
         
         return user
-    def login(self, validated_data):
-        email = validated_data['email']
-        password = validated_data['password']
-
-        try:
-            user = User.objects.get(email=email)
-        except ObjectDoesNotExist:
-            return {'error': 'User not found'}
-
-        if user.login_erro >= 3:
-            return {'error': 'Conta bloqueada por excesso de erros de login. Contate um administrador.'}
-
-        if check_password(password, user.password):
-            # Senha correta, cria um token baseado no email e id
-            token, created = Token.objects.get_or_create(user=user)
-
-            # Atualiza campos no banco de dados
-            user.is_logged_in = True
-            user.login_erro = User.LoginError.ZERO
-            user.save()
-
-            return {'token': token.key}
-        else:
-            # Senha incorreta, incrementa o contador de erros de login
-            user.login_erro += 1
-            user.save()
-
-            if user.login_erro >= 3:
-                return {'error': 'Conta bloqueada por excesso de erros de login. Contate um administrador.'}
-            else:
-                return {'error': 'Password or email incorreto'}
-
-class DeviceSerializer (serializers.HyperlinkedModelSerializer):
+    
+    def update(self, instance, validated_data):
+        return super().update(instance, validated_data)
+class DeviceSerializer (serializers.ModelSerializer):
     class Meta:
         model = Device
         fields = ('name', 'user')
