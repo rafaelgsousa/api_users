@@ -28,27 +28,29 @@ def sign_up(request):
 
 @api_view(http_method_names=['POST'])
 def sign_in(request):
-    email = request.data['email']
-    password = request.data['password']
+    email = request.data.get('email')
+    password = request.data.get('password')
 
     try:
-        data = User.objects.get(email=email)
+        user = User.objects.get(email=email)
     except ObjectDoesNotExist:
         return {'error': 'User not found'}
 
-    user = UserSerializer(data).data
+    user_serialize = UserSerializer(user)
     
-    if user['login_erro'] >= 3:
+    if user_serialize.data['login_erro'] >= 3:
         return {'error': 'Conta bloqueada por excesso de erros de login. Contate um administrador.'}
 
-    if check_password(password, user['password']):
+    if check_password(password, user.password):
         # Senha correta, cria um token baseado no email e id
-        token, created = Token.objects.get_or_create(user=user)
+        print('Id do usuário: ')
+        print(user.id)
+        token, created = Token.objects.get_or_create(user=user.id)
 
         # Atualiza campos no banco de dados
-        user['is_logged_in'] = True
-        if user['login_erro'] > 0:
-            user['login_erro'] = User.LoginError.ZERO
+        user.is_logged_in = True
+        if user.login_erro > 0:
+            user.login_erro = User.LoginError.ZERO
             user.save()
 
         return Response(
@@ -60,7 +62,7 @@ def sign_in(request):
         )
     else:
         # Senha incorreta, incrementa o contador de erros de login
-        user['login_erro'] += 1
+        user.login_erro += 1
         user.save()
 
         if user['login_erro'] >= 3:
