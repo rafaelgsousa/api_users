@@ -11,7 +11,7 @@ from .serializers import *
 
 # Create your views here.
 @api_view(http_method_names=['POST'])
-def sign_up(request):
+def register(request):
     body = request.data
     serializer = UserSerializer(data=body)
 
@@ -27,7 +27,7 @@ def sign_up(request):
     )
 
 @api_view(http_method_names=['POST'])
-def sign_in(request):
+def login(request):
     email = request.data.get('email')
     password = request.data.get('password')
 
@@ -46,6 +46,7 @@ def sign_in(request):
         print('Id do usuário: ')
         print(user.id)
         token, created = Token.objects.get_or_create(user=user.id)
+        print('Passou por aqui')
 
         # Atualiza campos no banco de dados
         user.is_logged_in = True

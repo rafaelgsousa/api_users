@@ -1,0 +1,50 @@
+# Arquivos do ambiente virtual
+venv/
+env/
+
+# Arquivos compilados Python
+*.pyc
+*.pyo
+__pycache__/
+
+# Arquivos de configuração local
+*.sqlite3
+*.db
+*.log
+*.pyc
+*.pyo
+*.pyd
+
+# Arquivos de mídia estática
+staticfiles/
+
+# Ambiente
+.env
+.env.local
+.env.*.local
+
+# Dependências geradas pelo pip
+pip-log.txt
+*.egg-info/
+dist/
+build/
+
+# Logs e arquivos temporários
+*.log
+*.swp
+*.bak
+*.pyc
+*.pyo
+*~
+
+# Arquivos de configuração do sistema
+.DS_Store
+Thumbs.db
+
+# Arquivos de cache
+__pycache__/
+.cache/
+
+# Arquivos de testes
+test_*.py
+*_test.py
