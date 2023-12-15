@@ -1,9 +1,9 @@
-from django.contrib.auth.hashers import check_password, make_password
+from django.contrib.auth.hashers import check_password
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import status
-from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import *
 from .serializers import *
@@ -39,14 +39,24 @@ def login(request):
     user_serialize = UserSerializer(user)
     
     if user_serialize.data['login_erro'] >= 3:
-        return {'error': 'Conta bloqueada por excesso de erros de login. Contate um administrador.'}
+        return Response(
+            {
+                'error': 'Conta bloqueada por excesso de erros de login. Contate um administrador.'
+            }
+        )
 
     if check_password(password, user.password):
         # Senha correta, cria um token baseado no email e id
         print('Id do usuário: ')
         print(user.id)
-        token, created = Token.objects.get_or_create(user=user.id)
-        print('Passou por aqui')
+        print('-----------------------------------')
+        print(user)
+        print('-----------------------------------')
+        token = RefreshToken.for_user(user)
+        print(token)
+        print('-----------------------------------')
+        print(token.access_token)
+        print('-----------------------------------')
 
         # Atualiza campos no banco de dados
         user.is_logged_in = True
@@ -74,7 +84,11 @@ def login(request):
                 status=status.HTTP_401_UNAUTHORIZED
             )
         else:
-            return {'error': 'Password or email incorreto'}
+            return Response(
+                {
+                    'error': 'Password or email incorreto'
+                }
+            )
 
 @api_view(http_method_names=['PATCH'])
 def logout(request):
