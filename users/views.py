@@ -50,7 +50,7 @@ def login(request):
         )
 
     user_serialize = UserSerializer(user)
-    
+    print(user_serialize.data['login_erro'])
     if user_serialize.data['login_erro'] >= 3:
         return Response(
             {
@@ -83,7 +83,7 @@ def login(request):
         user.login_erro += 1
         user.save()
 
-        if user['login_erro'] >= 3:
+        if user.login_erro >= 3:
             return Response(
                 {
                     'error': 'Conta bloqueada por excesso de erros de login. Contate um administrador.'
