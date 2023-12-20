@@ -1,7 +1,5 @@
-from django.contrib.auth.hashers import check_password, make_password
-from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
-from rest_framework.authtoken.models import Token
 
 from .models import Device, User
 
@@ -30,6 +28,14 @@ class UserSerializer (serializers.ModelSerializer):
     
     def update(self, instance, validated_data):
         return super().update(instance, validated_data)
+    
+    def validate(self, attrs):
+        if attrs.get('first_name') == attrs.get('last_name'):
+            raise serializers.ValidationError({
+                "error": ["First_name and last_name do not equal"],
+            })
+        return super().validate(attrs)
+    
 class DeviceSerializer (serializers.ModelSerializer):
     class Meta:
         model = Device

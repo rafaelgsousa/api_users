@@ -1,8 +1,12 @@
 from django.contrib.auth.hashers import check_password
 from django.core.exceptions import ObjectDoesNotExist
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import (api_view, authentication_classes,
+                                       permission_classes)
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import *
@@ -10,7 +14,10 @@ from .serializers import *
 
 
 # Create your views here.
+@csrf_exempt
 @api_view(http_method_names=['POST'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 def register(request):
     body = request.data
     serializer = UserSerializer(data=body)
@@ -21,11 +28,13 @@ def register(request):
     
     return Response(
         {
+            'user_id': str(user.id),
             'Register': user.email
         },
         status=status.HTTP_201_CREATED
     )
 
+@csrf_exempt
 @api_view(http_method_names=['POST'])
 def login(request):
     email = request.data.get('email')
@@ -34,7 +43,11 @@ def login(request):
     try:
         user = User.objects.get(email=email)
     except ObjectDoesNotExist:
-        return {'error': 'User not found'}
+        return Response(
+            {
+                'error': 'User not found'
+            }
+        )
 
     user_serialize = UserSerializer(user)
     
@@ -47,16 +60,7 @@ def login(request):
 
     if check_password(password, user.password):
         # Senha correta, cria um token baseado no email e id
-        print('Id do usuário: ')
-        print(user.id)
-        print('-----------------------------------')
-        print(user)
-        print('-----------------------------------')
         token = RefreshToken.for_user(user)
-        print(token)
-        print('-----------------------------------')
-        print(token.access_token)
-        print('-----------------------------------')
 
         # Atualiza campos no banco de dados
         user.is_logged_in = True
@@ -66,7 +70,10 @@ def login(request):
 
         return Response(
             {
-                'token': token.key,
+                'token': {
+                    'access': str(token.access_token),
+                    'refresh': str(token), 
+                },
                 'user': UserSerializer(user).data
             },
             status=status.HTTP_200_OK
@@ -90,6 +97,7 @@ def login(request):
                 }
             )
 
+@csrf_exempt
 @api_view(http_method_names=['PATCH'])
 def logout(request):
     return Response(
@@ -98,6 +106,7 @@ def logout(request):
         }
     )
 
+@csrf_exempt
 @api_view(http_method_names=['PATCH'])
 def change_password(request):
     return Response(
@@ -106,6 +115,7 @@ def change_password(request):
         }
     )
 
+@csrf_exempt
 @api_view(http_method_names=['GET'])
 def get_user(request):
     return Response(
@@ -114,6 +124,7 @@ def get_user(request):
         }
     )
 
+@csrf_exempt
 @api_view(http_method_names=['GET'])
 def get_users(request):
     return Response(
@@ -122,6 +133,7 @@ def get_users(request):
         }
     )
 
+@csrf_exempt
 @api_view(http_method_names=['PATCH'])
 def update_user(request):
     return Response(
@@ -130,6 +142,7 @@ def update_user(request):
         }
     )
 
+@csrf_exempt
 @api_view(http_method_names=['PATCH'])
 def inactive_user(request):
     return Response(
@@ -138,6 +151,7 @@ def inactive_user(request):
         }
     )
 
+@csrf_exempt
 @api_view(http_method_names=['DELETE'])
 def delete_user(request):
     return Response(

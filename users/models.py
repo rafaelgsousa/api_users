@@ -1,13 +1,47 @@
 from uuid import uuid4
 
+from django.contrib.auth.models import (AbstractBaseUser, AbstractUser,
+                                        BaseUserManager, Group, Permission)
 from django.db import models
+
+from project import settings
 
 
 class Device(models.Model):
     name = models.CharField(max_length=100)
     user = models.ForeignKey('User', on_delete=models.CASCADE)
 
-class User(models.Model):
+class CustomUserManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError('The email field is mandatory')
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save()
+        return user
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        return self.create_user(email, password, **extra_fields)
+
+class CustomUser(AbstractUser):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+
+    objects = CustomUserManager()
+
+    class Meta:
+        swappable = 'AUTH_USER_MODEL'
+
+class CustomGroup(Group):
+    user_set = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='custom_groups')
+
+class CustomPermission(Permission):
+    user_set = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='custom_permissions')
+    
+
+class User(AbstractBaseUser):
     class NivelUsuario(models.IntegerChoices):
         ZERO = 0, 'Zero'
         UM = 1, 'Um'
@@ -22,7 +56,7 @@ class User(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
-    email = models.EmailField(max_length=100, unique=True)
+    email = models.EmailField(max_length=50, unique=True)
     phone = models.CharField(max_length=20, unique=True)
     picture = models.ImageField(upload_to='pictures/%Y/%m/%d', blank=True)
     password = models.CharField(max_length=100)
@@ -32,4 +66,11 @@ class User(models.Model):
     login_erro = models.IntegerField(choices=LoginError.choices, default=LoginError.ZERO)
     created_at = models.DateTimeField(auto_now_add=True)
     update_at = models.DateTimeField(auto_now=True)
-    last_login = models.DateTimeField(blank=True, null=True)
+    last_login_sistem = models.DateTimeField(blank=True, null=True)
+
+    USERNAME_FIELD = "email"
+
+    REQUIRED_FIELDS = [""]
+
+    def __str__(self):
+        return self.email
