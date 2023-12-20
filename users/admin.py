@@ -2,9 +2,8 @@ from django.contrib import admin
 
 from users.models import *
 
-# Register your models here.
 
-@admin.register(User)
+@admin.register(CustomUser)
 class UserAdmin(admin.ModelAdmin):
     list_display = 'id', 'first_name', 'email', 'phone',
     ordering = '-id',

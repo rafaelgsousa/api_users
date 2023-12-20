@@ -1,28 +1,29 @@
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 
-from .models import Device, User
+from .models import CustomUser, Device
 
 
 class UserSerializer (serializers.ModelSerializer):
     class Meta:
-        model = User
+        model = CustomUser
         fields = ['first_name', 'last_name', 'email', 'phone', 'password', 'picture', 'login_erro', 'is_logged_in']
 
     password = serializers.CharField(write_only=True, required=True)
 
     def create(self, validated_data):
         # Crie um novo usuário com os dados validados
-        user = User.objects.create(
+        user = CustomUser.objects.create(
+            username=validated_data['email'],
             first_name=validated_data['first_name'],
             last_name=validated_data['last_name'],
             email=validated_data['email'],
             phone=validated_data['phone'],
             picture=validated_data.get('picture', None),
             password=make_password(validated_data['password']),  # Criptografa a senha
-            nv_user=User.NivelUsuario.ZERO,  # Define o nível do usuário como ZERO por padrão
+            nv_user=CustomUser.NivelUsuario.ZERO,  # Define o nível do usuário como ZERO por padrão
             is_logged_in=False,  # Define que o usuário não está logado por padrão
-            login_erro=User.LoginError.ZERO,  # Define o erro de login como ZERO por padrão
+            login_erro=CustomUser.LoginError.ZERO,  # Define o erro de login como ZERO por padrão
         )
         
         return user

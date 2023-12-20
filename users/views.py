@@ -41,7 +41,8 @@ def login(request):
     password = request.data.get('password')
 
     try:
-        user = User.objects.get(email=email)
+        user = CustomUser.objects.get(email=email)
+        print(user.username)
     except ObjectDoesNotExist:
         return Response(
             {
@@ -50,7 +51,6 @@ def login(request):
         )
 
     user_serialize = UserSerializer(user)
-    print(user_serialize.data['login_erro'])
     if user_serialize.data['login_erro'] >= 3:
         return Response(
             {
@@ -65,7 +65,7 @@ def login(request):
         # Atualiza campos no banco de dados
         user.is_logged_in = True
         if user.login_erro > 0:
-            user.login_erro = User.LoginError.ZERO
+            user.login_erro = CustomUser.LoginError.ZERO
             user.save()
 
         return Response(

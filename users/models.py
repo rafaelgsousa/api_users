@@ -9,7 +9,7 @@ from project import settings
 
 class Device(models.Model):
     name = models.CharField(max_length=100)
-    user = models.ForeignKey('User', on_delete=models.CASCADE)
+    user = models.ForeignKey('CustomUser', on_delete=models.CASCADE)
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -26,14 +26,6 @@ class CustomUserManager(BaseUserManager):
         extra_fields.setdefault('is_superuser', True)
         return self.create_user(email, password, **extra_fields)
 
-class CustomUser(AbstractUser):
-    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
-
-    objects = CustomUserManager()
-
-    class Meta:
-        swappable = 'AUTH_USER_MODEL'
-
 class CustomGroup(Group):
     user_set = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='custom_groups')
 
@@ -41,7 +33,7 @@ class CustomPermission(Permission):
     user_set = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='custom_permissions')
     
 
-class User(AbstractBaseUser):
+class CustomUser(AbstractUser):
     class NivelUsuario(models.IntegerChoices):
         ZERO = 0, 'Zero'
         UM = 1, 'Um'
@@ -70,7 +62,12 @@ class User(AbstractBaseUser):
 
     USERNAME_FIELD = "email"
 
-    REQUIRED_FIELDS = [""]
+    REQUIRED_FIELDS = []
+
+    objects = CustomUserManager()
+
+    class Meta:
+        swappable = 'AUTH_USER_MODEL'
 
     def __str__(self):
         return self.email
