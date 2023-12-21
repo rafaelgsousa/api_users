@@ -11,6 +11,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import *
 from .serializers import *
+from .utils import *
 
 
 # Create your views here.
@@ -19,6 +20,18 @@ from .serializers import *
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 def register(request):
+    token = request.auth
+    user_id = token['user_id']
+    user = CustomUser.objects.get(id=user_id)
+
+    if not user.is_logged_in:
+        return Response(
+            {
+            'error': 'User no logged'
+            },
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+
     body = request.data
     serializer = UserSerializer(data=body)
 
@@ -42,20 +55,21 @@ def login(request):
 
     try:
         user = CustomUser.objects.get(email=email)
-        print(user.username)
     except ObjectDoesNotExist:
         return Response(
             {
                 'error': 'User not found'
-            }
+            },
+            status=status.HTTP_404_NOT_FOUND
         )
-
+    
     user_serialize = UserSerializer(user)
     if user_serialize.data['login_erro'] >= 3:
         return Response(
             {
-                'error': 'Conta bloqueada por excesso de erros de login. Contate um administrador.'
-            }
+                'error': 'Account blocked due to excessive login errors. Contact an administrator.'
+            },
+            status=status.HTTP_401_UNAUTHORIZED
         )
 
     if check_password(password, user.password):
@@ -64,6 +78,7 @@ def login(request):
 
         # Atualiza campos no banco de dados
         user.is_logged_in = True
+        print(user.is_logged_in)
         if user.login_erro > 0:
             user.login_erro = CustomUser.LoginError.ZERO
             user.save()
@@ -86,29 +101,51 @@ def login(request):
         if user.login_erro >= 3:
             return Response(
                 {
-                    'error': 'Conta bloqueada por excesso de erros de login. Contate um administrador.'
+                    'error': 'Account blocked due to excessive login errors. Contact an administrator.'
                 },
                 status=status.HTTP_401_UNAUTHORIZED
             )
         else:
             return Response(
                 {
-                    'error': 'Password or email incorreto'
-                }
+                    'error': 'Incorrect password or email. Three login errors lead to account lockout'
+                },
+                status=status.HTTP_400_BAD_REQUEST
             )
 
 @csrf_exempt
 @api_view(http_method_names=['PATCH'])
-def logout(request):
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def logout(request, id):
+    token = request.auth
+    user_id = token['user_id']
+    if str(id) != user_id:
+        return Response(
+                {
+                    'error': 'No authorization for this procedure.'
+                },
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+    
+    user = CustomUser.objects.get(id=user_id)
+    user.is_logged_id = False
+    user.save()
     return Response(
         {
-            'logout'
-        }
+            'user': user.email,
+            'message': 'logout'
+        },
+        status=status.HTTP_200_OK
     )
 
 @csrf_exempt
 @api_view(http_method_names=['PATCH'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 def change_password(request):
+    token = request.auth
+    user_id = token['user_id']
     return Response(
         {
             'change password'
@@ -117,25 +154,114 @@ def change_password(request):
 
 @csrf_exempt
 @api_view(http_method_names=['GET'])
-def get_user(request):
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def get_user(request, id):
+    token = request.auth
+    user_id = token['user_id']
+    user = CustomUser.objects.get(id=user_id)
+
+    if not user:
+        return Response(
+            {
+                'error': 'User not found'
+            },
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    if not user.is_logged_in:
+        return Response(
+            {
+            'error': 'User no logged'
+            },
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+
+    if str(id) != user_id:
+        return Response(
+            {
+                'error': 'Unauthorized',
+            },
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
+    user_ser = UserSerializer(user)
+
     return Response(
         {
-            'get user'
-        }
+            'user': user_ser.data,
+        },
+        status=status.HTTP_200_OK
     )
 
 @csrf_exempt
 @api_view(http_method_names=['GET'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 def get_users(request):
+    token = request.auth
+    user_id = token['user_id']
+    user = CustomUser.objects.get(id=user_id)
+
+    if not user:
+        return Response(
+            {
+                'error': 'User not found'
+            },
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    if not user.is_logged_in:
+        return Response(
+            {
+            'error': 'User no logged'
+            },
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
+    users = CustomUser.objects.all().order_by('-id')
+
+    users_ser = UserSerializer(users)
+
     return Response(
         {
-            'get users'
+            'users': users_ser.data
         }
     )
 
 @csrf_exempt
 @api_view(http_method_names=['PATCH'])
-def update_user(request):
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def update_user(request, id):
+    token = request.auth
+    user_id = token['user_id']
+    user = CustomUser.objects.get(id=user_id)
+
+    if not user:
+        return Response(
+            {
+                'error': 'User not found'
+            },
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    if not user.is_logged_in:
+        return Response(
+            {
+            'error': 'User no logged'
+            },
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
+    if str(id) != user_id:
+        return Response(
+            {
+                'error': 'Unauthorized',
+            },
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
     return Response(
         {
             'update user'
@@ -144,7 +270,37 @@ def update_user(request):
 
 @csrf_exempt
 @api_view(http_method_names=['PATCH'])
-def inactive_user(request):
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def inactive_user(request, id):
+    token = request.auth
+    user_id = token['user_id']
+    user = CustomUser.objects.get(id=user_id)
+
+    if not user:
+        return Response(
+            {
+                'error': 'User not found'
+            },
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    if not user.is_logged_in:
+        return Response(
+            {
+            'error': 'User no logged'
+            },
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
+    if str(id) != user_id:
+        return Response(
+            {
+                'error': 'Unauthorized',
+            },
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
     return Response(
         {
             'inactive user'
@@ -153,7 +309,37 @@ def inactive_user(request):
 
 @csrf_exempt
 @api_view(http_method_names=['DELETE'])
-def delete_user(request):
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def delete_user(request, id):
+    token = request.auth
+    user_id = token['user_id']
+    user = CustomUser.objects.get(id=user_id)
+
+    if not user:
+        return Response(
+            {
+                'error': 'User not found'
+            },
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    if not user.is_logged_in:
+        return Response(
+            {
+            'error': 'User no logged'
+            },
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
+    if str(id) != user_id:
+        return Response(
+            {
+                'error': 'Unauthorized',
+            },
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
     return Response(
         {
             'delete_user'

@@ -7,9 +7,10 @@ from .models import CustomUser, Device
 class UserSerializer (serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['first_name', 'last_name', 'email', 'phone', 'password', 'picture', 'login_erro', 'is_logged_in']
+        fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'password', 'picture', 'login_erro', 'is_logged_in']
 
     password = serializers.CharField(write_only=True, required=True)
+    id = serializers.UUIDField(read_only=True)
 
     def create(self, validated_data):
         # Crie um novo usuário com os dados validados

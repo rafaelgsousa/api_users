@@ -1,0 +1,12 @@
+from rest_framework import status
+from rest_framework.response import Response
+
+
+def check_is_logged(data):
+    if not data.is_logged_in:
+        return Response({
+            'error': 'User no logged'
+        },
+        status=status.HTTP_401_UNAUTHORIZED
+        )
+    return True
