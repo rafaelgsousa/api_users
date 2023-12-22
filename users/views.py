@@ -17,21 +17,7 @@ from .utils import *
 
 @csrf_exempt
 @api_view(http_method_names=['POST'])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
 def register(request):
-    token = request.auth
-    user_id = token['user_id']
-    user = get_object_or_404(CustomUser,id=user_id)
-
-    if not user.is_logged_in:
-        return Response(
-            {
-            'error': 'User no logged'
-            },
-            status=status.HTTP_401_UNAUTHORIZED
-        )
-
     body = request.data
     serializer = UserSerializer(data=body)
 
