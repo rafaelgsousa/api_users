@@ -250,7 +250,8 @@ def update_user(request, id):
         data=request.data,
         partial=True
     )
-    
+    result.is_valid(raise_exception=True)
+    result.save()    
     return Response(
         {
             'user': result.data
@@ -322,6 +323,8 @@ def delete_user(request, id):
             },
             status=status.HTTP_401_UNAUTHORIZED
         )
+    
+    CustomUser.objects.delete(id=id)
     
     return Response(
         {
