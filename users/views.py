@@ -1,5 +1,6 @@
 from django.contrib.auth.hashers import check_password
 from django.core.exceptions import ObjectDoesNotExist
+from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
 from rest_framework.decorators import (api_view, authentication_classes,
@@ -22,7 +23,7 @@ from .utils import *
 def register(request):
     token = request.auth
     user_id = token['user_id']
-    user = CustomUser.objects.get(id=user_id)
+    user = get_object_or_404(CustomUser,id=user_id)
 
     if not user.is_logged_in:
         return Response(
@@ -53,15 +54,7 @@ def login(request):
     email = request.data.get('email')
     password = request.data.get('password')
 
-    try:
-        user = CustomUser.objects.get(email=email)
-    except ObjectDoesNotExist:
-        return Response(
-            {
-                'error': 'User not found'
-            },
-            status=status.HTTP_404_NOT_FOUND
-        )
+    user = get_object_or_404(CustomUser,email=email)
     
     user_serialize = UserSerializer(instance=user)
     if user_serialize.data['login_erro'] >= 3:
@@ -120,6 +113,7 @@ def login(request):
 def logout(request, id):
     token = request.auth
     user_id = token['user_id']
+
     if str(id) != user_id:
         return Response(
                 {
@@ -128,9 +122,12 @@ def logout(request, id):
                 status=status.HTTP_401_UNAUTHORIZED
             )
     
-    user = CustomUser.objects.get(id=user_id)
+    user = get_object_or_404(CustomUser, id=user_id)
+
     user.is_logged_id = False
+
     user.save()
+
     return Response(
         {
             'user': user.email,
@@ -159,28 +156,21 @@ def change_password(request):
 def get_user(request, id):
     token = request.auth
     user_id = token['user_id']
-    user = CustomUser.objects.get(id=user_id)
-
-    if not user:
-        return Response(
-            {
-                'error': 'User not found'
-            },
-            status=status.HTTP_404_NOT_FOUND
-        )
-
-    if not user.is_logged_in:
-        return Response(
-            {
-            'error': 'User no logged'
-            },
-            status=status.HTTP_401_UNAUTHORIZED
-        )
 
     if str(id) != user_id:
         return Response(
             {
                 'error': 'Unauthorized',
+            },
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
+    user = get_object_or_404(CustomUser, id=id)
+
+    if not user.is_logged_in:
+        return Response(
+            {
+            'error': 'User no logged'
             },
             status=status.HTTP_401_UNAUTHORIZED
         )
@@ -201,7 +191,7 @@ def get_user(request, id):
 def get_users(request):
     token = request.auth
     user_id = token['user_id']
-    user = CustomUser.objects.get(id=user_id)
+    user = get_object_or_404(CustomUser,id=user_id)
 
     if not user:
         return Response(
@@ -236,28 +226,21 @@ def get_users(request):
 def update_user(request, id):
     token = request.auth
     user_id = token['user_id']
-    user = CustomUser.objects.get(id=user_id)
 
-    if not user:
+    if str(id) != user_id:
         return Response(
             {
-                'error': 'User not found'
+                'error': 'Unauthorized',
             },
-            status=status.HTTP_404_NOT_FOUND
+            status=status.HTTP_401_UNAUTHORIZED
         )
+    
+    user = get_object_or_404(CustomUser,id=user_id)
 
     if not user.is_logged_in:
         return Response(
             {
             'error': 'User no logged'
-            },
-            status=status.HTTP_401_UNAUTHORIZED
-        )
-    
-    if str(id) != user_id:
-        return Response(
-            {
-                'error': 'Unauthorized',
             },
             status=status.HTTP_401_UNAUTHORIZED
         )
@@ -282,24 +265,7 @@ def update_user(request, id):
 def inactive_user(request, id):
     token = request.auth
     user_id = token['user_id']
-    user = CustomUser.objects.get(id=user_id)
 
-    if not user:
-        return Response(
-            {
-                'error': 'User not found'
-            },
-            status=status.HTTP_404_NOT_FOUND
-        )
-
-    if not user.is_logged_in:
-        return Response(
-            {
-            'error': 'User no logged'
-            },
-            status=status.HTTP_401_UNAUTHORIZED
-        )
-    
     if str(id) != user_id:
         return Response(
             {
@@ -307,6 +273,16 @@ def inactive_user(request, id):
             },
             status=status.HTTP_401_UNAUTHORIZED
         )
+    
+    user = get_object_or_404(CustomUser, id=id)
+
+    if not user.is_logged_in:
+        return Response(
+            {
+            'error': 'User no logged'
+            },
+            status=status.HTTP_401_UNAUTHORIZED
+        )     
     
     result = UserSerializer(
         instance=user,
@@ -328,28 +304,21 @@ def inactive_user(request, id):
 def delete_user(request, id):
     token = request.auth
     user_id = token['user_id']
-    user = CustomUser.objects.get(id=user_id)
 
-    if not user:
+    if str(id) != user_id:
         return Response(
             {
-                'error': 'User not found'
+                'error': 'Unauthorized',
             },
-            status=status.HTTP_404_NOT_FOUND
+            status=status.HTTP_401_UNAUTHORIZED
         )
+    
+    user = get_object_or_404(CustomUser, id=id)
 
     if not user.is_logged_in:
         return Response(
             {
             'error': 'User no logged'
-            },
-            status=status.HTTP_401_UNAUTHORIZED
-        )
-    
-    if str(id) != user_id:
-        return Response(
-            {
-                'error': 'Unauthorized',
             },
             status=status.HTTP_401_UNAUTHORIZED
         )
