@@ -30,7 +30,24 @@ class UserSerializer (serializers.ModelSerializer):
         return user
     
     def update(self, instance, validated_data):
-        return super().update(instance, validated_data)
+        # Atualize os campos desejados com os dados validados
+        instance.first_name = validated_data.get('first_name', instance.first_name)
+        instance.last_name = validated_data.get('last_name', instance.last_name)
+        instance.email = validated_data.get('email', instance.email)
+        instance.phone = validated_data.get('phone', instance.phone)
+        instance.picture = validated_data.get('picture', instance.picture)
+
+        # Se desejar atualizar a senha, você pode fazer isso aqui
+        password = validated_data.get('password')
+        if password:
+            instance.password = make_password(password)
+
+        # Outros campos e lógica de atualização conforme necessário
+
+        # Salve as alterações no banco de dados
+        instance.save()
+
+        return instance
     
     def validate(self, attrs):
         if attrs.get('first_name') == attrs.get('last_name'):

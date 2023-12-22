@@ -63,7 +63,7 @@ def login(request):
             status=status.HTTP_404_NOT_FOUND
         )
     
-    user_serialize = UserSerializer(user)
+    user_serialize = UserSerializer(instance=user)
     if user_serialize.data['login_erro'] >= 3:
         return Response(
             {
@@ -221,7 +221,7 @@ def get_users(request):
     
     users = CustomUser.objects.all().order_by('-id')
 
-    users_ser = UserSerializer(users)
+    users_ser = UserSerializer(instance=users, many=True)
 
     return Response(
         {
@@ -262,10 +262,17 @@ def update_user(request, id):
             status=status.HTTP_401_UNAUTHORIZED
         )
     
+    result = UserSerializer(
+        instance=user,
+        data=request.data,
+        partial=True
+    )
+    
     return Response(
         {
-            'update user'
-        }
+            'user': result.data
+        },
+        status=status.HTTP_200_OK
     )
 
 @csrf_exempt
@@ -301,10 +308,17 @@ def inactive_user(request, id):
             status=status.HTTP_401_UNAUTHORIZED
         )
     
+    result = UserSerializer(
+        instance=user,
+        data=request.data,
+        partial=True
+    )
+    
     return Response(
         {
-            'inactive user'
-        }
+            'user': result.data
+        },
+        status=status.HTTP_200_OK
     )
 
 @csrf_exempt
@@ -343,5 +357,6 @@ def delete_user(request, id):
     return Response(
         {
             'delete_user'
-        }
+        },
+        status=status.HTTP_204_NO_CONTENT
     )
