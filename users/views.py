@@ -1,7 +1,7 @@
 from django.contrib.auth.hashers import check_password
-from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
+from django_user_agents.utils import get_user_agent
 from rest_framework import status
 from rest_framework.decorators import (api_view, authentication_classes,
                                        permission_classes)
@@ -15,7 +15,6 @@ from .serializers import *
 from .utils import *
 
 
-# Create your views here.
 @csrf_exempt
 @api_view(http_method_names=['POST'])
 @authentication_classes([JWTAuthentication])
@@ -51,6 +50,8 @@ def register(request):
 @csrf_exempt
 @api_view(http_method_names=['POST'])
 def login(request):
+    user_agent = get_user_agent(request)
+    print(f'Esse é o device {user_agent}')
     email = request.data.get('email')
     password = request.data.get('password')
 
@@ -335,11 +336,11 @@ def delete_user(request, id):
             status=status.HTTP_401_UNAUTHORIZED
         )
     
-    CustomUser.objects.delete(id=id)
+    user.delete()
     
     return Response(
         {
-            'delete_user'
+            'message':'delete_user'
         },
         status=status.HTTP_204_NO_CONTENT
     )
