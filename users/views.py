@@ -71,6 +71,7 @@ def login(request):
 
         # Atualiza campos no banco de dados
         user.is_logged_in = True
+        user.save()
         print(user.is_logged_in)
         if user.login_erro > 0:
             user.login_erro = CustomUser.LoginError.ZERO
@@ -122,9 +123,9 @@ def logout(request, id):
                 status=status.HTTP_401_UNAUTHORIZED
             )
     
-    user = get_object_or_404(CustomUser, id=user_id)
+    user = get_object_or_404(CustomUser, id=id)
 
-    user.is_logged_id = False
+    user.is_logged_in = False
 
     user.save()
 
@@ -140,7 +141,20 @@ def logout(request, id):
 @api_view(http_method_names=['PATCH'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
-def change_password(request):
+def change_password_by_settings(request):
+    token = request.auth
+    user_id = token['user_id']
+    return Response(
+        {
+            'change password'
+        }
+    )
+
+@csrf_exempt
+@api_view(http_method_names=['PATCH'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def change_password_by_login_page(request):
     token = request.auth
     user_id = token['user_id']
     return Response(
@@ -235,7 +249,7 @@ def update_user(request, id):
             status=status.HTTP_401_UNAUTHORIZED
         )
     
-    user = get_object_or_404(CustomUser,id=user_id)
+    user = get_object_or_404(CustomUser,id=id)
 
     if not user.is_logged_in:
         return Response(
@@ -285,15 +299,12 @@ def inactive_user(request, id):
             status=status.HTTP_401_UNAUTHORIZED
         )     
     
-    result = UserSerializer(
-        instance=user,
-        data=request.data,
-        partial=True
-    )
+    user.is_active = False
+    user.save()
     
     return Response(
         {
-            'user': result.data
+            'message': f'User {user.email} is inactive'
         },
         status=status.HTTP_200_OK
     )
