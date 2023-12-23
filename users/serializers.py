@@ -7,10 +7,11 @@ from .models import CustomUser, Device
 class UserSerializer (serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'password', 'picture', 'login_erro', 'is_logged_in']
+        fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'password', 'picture', 'login_erro', 'is_logged_in', 'nv_user']
 
     password = serializers.CharField(write_only=True, required=True)
     id = serializers.UUIDField(read_only=True)
+    nv_user = serializers.IntegerField(write_only=True, required=False)
 
     def create(self, validated_data):
         # Crie um novo usuário com os dados validados
@@ -30,30 +31,31 @@ class UserSerializer (serializers.ModelSerializer):
         return user
     
     def update(self, instance, validated_data):
-        # Atualize os campos desejados com os dados validados
         instance.first_name = validated_data.get('first_name', instance.first_name)
         instance.last_name = validated_data.get('last_name', instance.last_name)
         instance.email = validated_data.get('email', instance.email)
         instance.phone = validated_data.get('phone', instance.phone)
         instance.picture = validated_data.get('picture', instance.picture)
+        instance.nv_user = validated_data.get('nv_user', instance.nv_user)
 
-        # Se desejar atualizar a senha, você pode fazer isso aqui
         password = validated_data.get('password')
         if password:
             instance.password = make_password(password)
 
-        # Outros campos e lógica de atualização conforme necessário
-
-        # Salve as alterações no banco de dados
         instance.save()
 
         return instance
     
     def validate(self, attrs):
-        if attrs.get('first_name') == attrs.get('last_name'):
+        if attrs.get('first_name') == attrs.get('last_name') and attrs.get('first_name') != None and attrs.get('last_name') != None:
             raise serializers.ValidationError({
                 "error": ["First_name and last_name do not equal"],
             })
+        if attrs.get('nv_user') is not None:
+            if attrs.get('nv_user') > 3 or attrs.get('nv_user') < 0 or type(attrs.get('nv_user') != int):
+                raise serializers.ValidationError({
+                    "error": ["Nv_user has an invalid value"]
+                })
         return super().validate(attrs)
     
 class DeviceSerializer (serializers.ModelSerializer):

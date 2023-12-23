@@ -1,7 +1,6 @@
 from django.contrib.auth.hashers import check_password
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
-from django_user_agents.utils import get_user_agent
 from rest_framework import status
 from rest_framework.decorators import (api_view, authentication_classes,
                                        permission_classes)
@@ -36,8 +35,6 @@ def register(request):
 @csrf_exempt
 @api_view(http_method_names=['POST'])
 def login(request):
-    user_agent = get_user_agent(request)
-    print(f'Esse é o device {user_agent}')
     email = request.data.get('email')
     password = request.data.get('password')
 
@@ -51,15 +48,20 @@ def login(request):
             },
             status=status.HTTP_401_UNAUTHORIZED
         )
+    
+    if not user.is_active:
+        return Response(
+            {
+                'error': 'User is inactive'
+            },
+            status=status.HTTP_401_UNAUTHORIZED
+        )
 
     if check_password(password, user.password):
-        # Senha correta, cria um token baseado no email e id
         token = RefreshToken.for_user(user)
 
-        # Atualiza campos no banco de dados
         user.is_logged_in = True
         user.save()
-        print(user.is_logged_in)
         if user.login_erro > 0:
             user.login_erro = CustomUser.LoginError.ZERO
             user.save()
@@ -75,7 +77,6 @@ def login(request):
             status=status.HTTP_200_OK
         )
     else:
-        # Senha incorreta, incrementa o contador de erros de login
         user.login_erro += 1
         user.save()
 
@@ -194,14 +195,14 @@ def get_users(request):
     user_id = token['user_id']
     user = get_object_or_404(CustomUser,id=user_id)
 
-    if not user:
+    if user.nv_user < 1:
         return Response(
             {
-                'error': 'User not found'
+            'error': 'Unauthorized user'
             },
-            status=status.HTTP_404_NOT_FOUND
+            status=status.HTTP_401_UNAUTHORIZED
         )
-
+    
     if not user.is_logged_in:
         return Response(
             {
@@ -225,6 +226,7 @@ def get_users(request):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 def update_user(request, id):
+    print(f'Request data {request.data} ')
     token = request.auth
     user_id = token['user_id']
 
@@ -268,23 +270,28 @@ def inactive_user(request, id):
     token = request.auth
     user_id = token['user_id']
 
+
     if str(id) != user_id:
-        return Response(
-            {
-                'error': 'Unauthorized',
-            },
-            status=status.HTTP_401_UNAUTHORIZED
-        )
+        user_req = get_object_or_404(CustomUser, id=user_id)
+
+        if user_req.nv_user < 1:
+            return Response(
+                {
+                    'error': 'Unauthorized',
+                },
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        if not user_req.is_logged_in:
+            return Response(
+                {
+                'error': 'User no logged'
+                },
+                status=status.HTTP_401_UNAUTHORIZED
+            )     
     
     user = get_object_or_404(CustomUser, id=id)
 
-    if not user.is_logged_in:
-        return Response(
-            {
-            'error': 'User no logged'
-            },
-            status=status.HTTP_401_UNAUTHORIZED
-        )     
     
     user.is_active = False
     user.save()
