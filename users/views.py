@@ -9,9 +9,10 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from utils import *
+
 from .models import *
 from .serializers import *
-from .utils import *
 
 
 @csrf_exempt
@@ -160,22 +161,24 @@ def get_user(request, id):
     user_id = token['user_id']
 
     if str(id) != user_id:
-        return Response(
-            {
-                'error': 'Unauthorized',
-            },
-            status=status.HTTP_401_UNAUTHORIZED
-        )
+        user_req = get_object_or_404(CustomUser, id=user_id)
+
+        response = check_level(user_req, 1)
+
+        if response:
+            return response
+        
+        response = check_logged_in(user_req)
+
+        if response:
+            return response
     
     user = get_object_or_404(CustomUser, id=id)
 
-    if not user.is_logged_in:
-        return Response(
-            {
-            'error': 'User no logged'
-            },
-            status=status.HTTP_401_UNAUTHORIZED
-        )
+    response = check_logged_in(user)
+
+    if response:
+        return response
     
     user_ser = UserSerializer(user)
 
@@ -195,21 +198,15 @@ def get_users(request):
     user_id = token['user_id']
     user = get_object_or_404(CustomUser,id=user_id)
 
-    if user.nv_user < 1:
-        return Response(
-            {
-            'error': 'Unauthorized user'
-            },
-            status=status.HTTP_401_UNAUTHORIZED
-        )
+    response = check_level(user, 1)
+
+    if response:
+        return response
     
-    if not user.is_logged_in:
-        return Response(
-            {
-            'error': 'User no logged'
-            },
-            status=status.HTTP_401_UNAUTHORIZED
-        )
+    response = check_logged_in(user)
+
+    if response:
+        return response
     
     users = CustomUser.objects.all().order_by('-id')
 
@@ -240,13 +237,10 @@ def update_user(request, id):
     
     user = get_object_or_404(CustomUser,id=id)
 
-    if not user.is_logged_in:
-        return Response(
-            {
-            'error': 'User no logged'
-            },
-            status=status.HTTP_401_UNAUTHORIZED
-        )
+    response = check_logged_in(user)
+
+    if response:
+        return response
     
     result = UserSerializer(
         instance=user,
@@ -274,24 +268,34 @@ def inactive_user(request, id):
     if str(id) != user_id:
         user_req = get_object_or_404(CustomUser, id=user_id)
 
-        if user_req.nv_user < 1:
-            return Response(
-                {
-                    'error': 'Unauthorized',
-                },
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+        response = check_level(user_req, 1)
+
+        if response:
+            return response
         
-        if not user_req.is_logged_in:
-            return Response(
-                {
-                'error': 'User no logged'
-                },
-                status=status.HTTP_401_UNAUTHORIZED
-            )     
+        response = check_logged_in(user_req)
+
+        if response:
+            return response
+        
+        user = get_object_or_404(CustomUser, id=id)
+
+        user.is_active = False
+        user.save()
+        
+        return Response(
+            {
+                'message': f'User {user.email} is inactive'
+            },
+            status=status.HTTP_200_OK
+        )
     
     user = get_object_or_404(CustomUser, id=id)
 
+    response = check_logged_in(user)
+
+    if response:
+        return response
     
     user.is_active = False
     user.save()
@@ -321,13 +325,10 @@ def delete_user(request, id):
     
     user = get_object_or_404(CustomUser, id=id)
 
-    if not user.is_logged_in:
-        return Response(
-            {
-            'error': 'User no logged'
-            },
-            status=status.HTTP_401_UNAUTHORIZED
-        )
+    response = check_logged_in(user)
+
+    if response:
+        return response
     
     user.delete()
     
