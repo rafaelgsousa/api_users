@@ -130,7 +130,7 @@ def logout(request, id):
 @api_view(http_method_names=['PATCH'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
-def change_password_by_settings(request):
+def change_password_by_settings(request, id):
     token = request.auth
     user_id = token['user_id']
     return Response(
@@ -143,7 +143,7 @@ def change_password_by_settings(request):
 @api_view(http_method_names=['PATCH'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
-def change_password_by_login_page(request):
+def change_password_by_login_page(request, email):
     token = request.auth
     user_id = token['user_id']
     return Response(
@@ -159,10 +159,10 @@ def change_password_by_login_page(request):
 def get_user(request, id):
     token = request.auth
     user_id = token['user_id']
+    user_req = get_object_or_404(CustomUser, id=user_id)
+    user = get_object_or_404(CustomUser, id=id)
 
     if str(id) != user_id:
-        user_req = get_object_or_404(CustomUser, id=user_id)
-
         response = check_level(user_req, 1)
 
         if response:
@@ -173,7 +173,6 @@ def get_user(request, id):
         if response:
             return response
     
-    user = get_object_or_404(CustomUser, id=id)
 
     response = check_logged_in(user)
 
@@ -223,19 +222,35 @@ def get_users(request):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 def update_user(request, id):
-    print(f'Request data {request.data} ')
     token = request.auth
     user_id = token['user_id']
+    user_req = get_object_or_404(CustomUser,id=user_id)
+    user = get_object_or_404(CustomUser,id=id)
 
     if str(id) != user_id:
+        response = check_level_to_update_nv_user(request.data, user_req, user)
+        if response:
+            return response
+        
+        response = check_logged_in(user_req)
+        if response:
+            return response
+
+        result = UserSerializer(
+                    instance=user,
+                    data=request.data,
+                    partial=True
+                )
+            
+        result.is_valid(raise_exception=True)
+        result.save()    
+
         return Response(
             {
-                'error': 'Unauthorized',
+                'user': result.data
             },
-            status=status.HTTP_401_UNAUTHORIZED
+            status=status.HTTP_200_OK
         )
-    
-    user = get_object_or_404(CustomUser,id=id)
 
     response = check_logged_in(user)
 
@@ -263,12 +278,12 @@ def update_user(request, id):
 def inactive_user(request, id):
     token = request.auth
     user_id = token['user_id']
-
+    user_req = get_object_or_404(CustomUser, id=user_id)
+    user = get_object_or_404(CustomUser, id=id)
 
     if str(id) != user_id:
-        user_req = get_object_or_404(CustomUser, id=user_id)
 
-        response = check_level(user_req, 1)
+        response = check_levels(user_req, user)
 
         if response:
             return response
@@ -278,7 +293,6 @@ def inactive_user(request, id):
         if response:
             return response
         
-        user = get_object_or_404(CustomUser, id=id)
 
         user.is_active = False
         user.save()
@@ -289,8 +303,6 @@ def inactive_user(request, id):
             },
             status=status.HTTP_200_OK
         )
-    
-    user = get_object_or_404(CustomUser, id=id)
 
     response = check_logged_in(user)
 
@@ -314,16 +326,23 @@ def inactive_user(request, id):
 def delete_user(request, id):
     token = request.auth
     user_id = token['user_id']
+    user = get_object_or_404(CustomUser, id=id)
+    user_req = get_object_or_404(CustomUser,id=user_id)
 
     if str(id) != user_id:
-        return Response(
-            {
-                'error': 'Unauthorized',
-            },
-            status=status.HTTP_401_UNAUTHORIZED
-        )
-    
-    user = get_object_or_404(CustomUser, id=id)
+
+        if user_req.nv_user >= 2:
+            response = check_levels(user_req, user)
+
+            if response:
+                return response
+            
+            response = check_logged_in(user_req)
+
+            if response:
+                return response
+
+
 
     response = check_logged_in(user)
 

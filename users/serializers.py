@@ -52,7 +52,7 @@ class UserSerializer (serializers.ModelSerializer):
                 "error": ["First_name and last_name do not equal"],
             })
         if attrs.get('nv_user') is not None:
-            if attrs.get('nv_user') > 3 or attrs.get('nv_user') < 0 or type(attrs.get('nv_user') != int):
+            if attrs.get('nv_user') > 3 or attrs.get('nv_user') < 0 or type(attrs.get('nv_user')) != int:
                 raise serializers.ValidationError({
                     "error": ["Nv_user has an invalid value"]
                 })

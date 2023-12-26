@@ -41,8 +41,8 @@ class CustomUser(AbstractUser):
         TRES = 3, 'Tres'
 
     # User level zero sees your data, login, logout, create your own account, inactivate or delete your account and change your data.
-    # User level one do the same as level zero, but they can see data from all users and change data from user zero to level 1 and inactivate users zero.
-    # User level two can do the same as level one and can delete or inactivate any level 1 and 0 user.
+    # Level one user does the same as level zero, but can see all users' data and change user zero's nv_user to level 1 and inactivate zero users.
+    # Level two user can do the same as level one on a prorated basis and can delete or inactivate any level 1 and 0 user.
     # User level three is the master, he can do everything. 
 
     class LoginError(models.IntegerChoices):
