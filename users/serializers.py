@@ -7,7 +7,7 @@ from .models import CustomUser, Device
 class UserSerializer (serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'password', 'picture', 'login_erro', 'is_logged_in', 'nv_user']
+        fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'password', 'picture', 'login_erro', 'is_logged_in', 'nv_user', 'is_active']
 
     password = serializers.CharField(write_only=True, required=True)
     id = serializers.UUIDField(read_only=True)
@@ -37,6 +37,7 @@ class UserSerializer (serializers.ModelSerializer):
         instance.phone = validated_data.get('phone', instance.phone)
         instance.picture = validated_data.get('picture', instance.picture)
         instance.nv_user = validated_data.get('nv_user', instance.nv_user)
+        instance.is_active = validated_data.get('is_active', instance.is_active)
 
         password = validated_data.get('password')
         if password:

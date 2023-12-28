@@ -226,6 +226,10 @@ def update_user(request, id):
     user_req = get_object_or_404(CustomUser,id=user_id)
     user = get_object_or_404(CustomUser,id=id)
 
+    response = check_update_is_logged_in(request.data)
+    if response:
+        return response
+
     if str(id) != user_id:
         response = check_level_to_update_nv_user(request.data, user_req, user)
         if response:
@@ -270,53 +274,53 @@ def update_user(request, id):
         status=status.HTTP_200_OK
     )
 
-@csrf_exempt
-@api_view(http_method_names=['PATCH'])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
-def inactive_user(request, id):
-    token = request.auth
-    user_id = token['user_id']
-    user_req = get_object_or_404(CustomUser, id=user_id)
-    user = get_object_or_404(CustomUser, id=id)
+# @csrf_exempt
+# @api_view(http_method_names=['PATCH'])
+# @authentication_classes([JWTAuthentication])
+# @permission_classes([IsAuthenticated])
+# def inactive_user(request, id):
+#     token = request.auth
+#     user_id = token['user_id']
+#     user_req = get_object_or_404(CustomUser, id=user_id)
+#     user = get_object_or_404(CustomUser, id=id)
 
-    if str(id) != user_id:
+#     if str(id) != user_id:
 
-        response = check_levels(user_req, user)
+#         response = check_levels(user_req, user)
 
-        if response:
-            return response
+#         if response:
+#             return response
         
-        response = check_logged_in(user_req)
+#         response = check_logged_in(user_req)
 
-        if response:
-            return response
+#         if response:
+#             return response
         
 
-        user.is_active = False
-        user.save()
+#         user.is_active = False
+#         user.save()
         
-        return Response(
-            {
-                'message': f'User {user.email} is inactive'
-            },
-            status=status.HTTP_200_OK
-        )
+#         return Response(
+#             {
+#                 'message': f'User {user.email} is inactive'
+#             },
+#             status=status.HTTP_200_OK
+#         )
 
-    response = check_logged_in(user)
+#     response = check_logged_in(user)
 
-    if response:
-        return response
+#     if response:
+#         return response
     
-    user.is_active = False
-    user.save()
+#     user.is_active = False
+#     user.save()
     
-    return Response(
-        {
-            'message': f'User {user.email} is inactive'
-        },
-        status=status.HTTP_200_OK
-    )
+#     return Response(
+#         {
+#             'message': f'User {user.email} is inactive'
+#         },
+#         status=status.HTTP_200_OK
+#     )
 
 @csrf_exempt
 @api_view(http_method_names=['DELETE'])

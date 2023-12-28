@@ -31,7 +31,7 @@ def check_logged_in(user):
     
 
 def check_level_to_update_nv_user(body, user_act, user_pass):
-    if (len(body) > 1 or 'nv_user' not in body or user_act.nv_user < 1 or 
+    if (len(body) == 1 and 'nv_user' in body) and (user_act.nv_user < 1 or 
         user_pass.nv_user >= user_act.nv_user or body['nv_user'] > user_act.nv_user):
         return Response(
             {
@@ -39,4 +39,21 @@ def check_level_to_update_nv_user(body, user_act, user_pass):
             },
             status=status.HTTP_401_UNAUTHORIZED
         )
-
+    
+    if (len(body) == 1 and 'is_active' in body) and (user_act.nv_user < 1 or 
+        user_pass.nv_user >= user_act.nv_user):
+        return Response(
+            {
+                'error': 'Unauthorized',
+            },
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
+def check_update_is_logged_in(body):
+    if 'is_logged_id' in body:
+        return Response(
+            {
+                'error': 'Unauthorized',
+            },
+            status=status.HTTP_401_UNAUTHORIZED
+        )
