@@ -163,20 +163,7 @@ def get_user(request, id):
     user = get_object_or_404(CustomUser, id=id)
 
     if str(id) != user_id:
-        response = check_level(user_req, 1)
-
-        if response:
-            return response
-        
-        response = check_logged_in(user_req)
-
-        if response:
-            return response
-
-    response = check_logged_in(user)
-
-    if response:
-        return response
+        check_level(user_req, 1)
     
     user_ser = UserSerializer(user)
 
@@ -196,15 +183,7 @@ def get_users(request):
     user_id = token['user_id']
     user = get_object_or_404(CustomUser,id=user_id)
 
-    response = check_level(user, 1)
-
-    if response:
-        return response
-    
-    response = check_logged_in(user)
-
-    if response:
-        return response
+    check_level(user, 1)
     
     users = CustomUser.objects.all().order_by('-id')
 
@@ -226,18 +205,10 @@ def update_user(request, id):
     user_req = get_object_or_404(CustomUser,id=user_id)
     user = get_object_or_404(CustomUser,id=id)
 
-    response = check_update_is_logged_in(request.data)
-    if response:
-        return response
+    check_update_is_logged_in(request.data)
 
     if str(id) != user_id:
-        response = check_level_to_update_nv_user(request.data, user_req, user)
-        if response:
-            return response
-        
-        response = check_logged_in(user_req)
-        if response:
-            return response
+        check_level_to_update_nv_user(request.data, user_req, user)
 
         result = UserSerializer(
                     instance=user,
@@ -254,11 +225,6 @@ def update_user(request, id):
             },
             status=status.HTTP_200_OK
         )
-
-    response = check_logged_in(user)
-
-    if response:
-        return response
     
     result = UserSerializer(
         instance=user,
@@ -274,54 +240,6 @@ def update_user(request, id):
         status=status.HTTP_200_OK
     )
 
-# @csrf_exempt
-# @api_view(http_method_names=['PATCH'])
-# @authentication_classes([JWTAuthentication])
-# @permission_classes([IsAuthenticated])
-# def inactive_user(request, id):
-#     token = request.auth
-#     user_id = token['user_id']
-#     user_req = get_object_or_404(CustomUser, id=user_id)
-#     user = get_object_or_404(CustomUser, id=id)
-
-#     if str(id) != user_id:
-
-#         response = check_levels(user_req, user)
-
-#         if response:
-#             return response
-        
-#         response = check_logged_in(user_req)
-
-#         if response:
-#             return response
-        
-
-#         user.is_active = False
-#         user.save()
-        
-#         return Response(
-#             {
-#                 'message': f'User {user.email} is inactive'
-#             },
-#             status=status.HTTP_200_OK
-#         )
-
-#     response = check_logged_in(user)
-
-#     if response:
-#         return response
-    
-#     user.is_active = False
-#     user.save()
-    
-#     return Response(
-#         {
-#             'message': f'User {user.email} is inactive'
-#         },
-#         status=status.HTTP_200_OK
-#     )
-
 @csrf_exempt
 @api_view(http_method_names=['DELETE'])
 @authentication_classes([JWTAuthentication])
@@ -335,20 +253,7 @@ def delete_user(request, id):
     if str(id) != user_id:
 
         if user_req.nv_user >= 2:
-            response = check_levels(user_req, user)
-
-            if response:
-                return response
-            
-            response = check_logged_in(user_req)
-
-            if response:
-                return response
-
-    response = check_logged_in(user)
-
-    if response:
-        return response
+            check_levels(user_req, user)
     
     user.delete()
     
