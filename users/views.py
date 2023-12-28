@@ -172,7 +172,6 @@ def get_user(request, id):
 
         if response:
             return response
-    
 
     response = check_logged_in(user)
 
@@ -341,8 +340,6 @@ def delete_user(request, id):
 
             if response:
                 return response
-
-
 
     response = check_logged_in(user)
 

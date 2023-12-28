@@ -55,7 +55,7 @@ class CustomUser(AbstractUser):
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     email = models.EmailField(max_length=50, unique=True)
-    phone = models.CharField(max_length=20, unique=True)
+    phone = models.CharField(max_length=20, unique=True, blank=True)
     picture = models.ImageField(upload_to='pictures/%Y/%m/%d', blank=True)
     password = models.CharField(max_length=100)
     is_active = models.BooleanField(default=True)
