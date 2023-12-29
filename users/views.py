@@ -1,9 +1,13 @@
+import email.message
+import os
 import random
+import smtplib
 
 from django.contrib.auth.hashers import check_password
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
+from dotenv import load_dotenv
 from rest_framework import status
 from rest_framework.decorators import (api_view, authentication_classes,
                                        permission_classes)
@@ -12,6 +16,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
+
+load_dotenv()
 
 from utils import *
 
@@ -111,17 +117,21 @@ def logout(request, id):
 
 @csrf_exempt
 @api_view(http_method_names=['POST'])
-def forget_password_send_email(request, email):
-    print(request.data)
+def forget_password_send_email(request, email=None):
+    # print(request.data)
     print(f'email : {email}')
-    user = get_object_or_404(CustomUser, email=email)
-    print(user)
+    email_user = email if email != None else "elderrafaelgomes@gmail.com"
+    user = get_object_or_404(CustomUser, email=email_user)
+
     send_mail(
-            'Reset Password',
-            f'Acesse esse link: example.com.br para começar a mudar seu password',
-            'rafaeldevtesting@gmail.com',
-            [user.email],
+            subject='Test',
+            message='',
+            from_email=f'{os.getenv("EMAIL_HOST_USER")}',
+            recipient_list=[f'{user.email}'],
             fail_silently=False,
+            html_message="""
+                <p>Mais um test</p>
+            """
         )
 
     return Response(
