@@ -1,9 +1,13 @@
+import random
+
 from django.contrib.auth.hashers import check_password
+from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
 from rest_framework.decorators import (api_view, authentication_classes,
                                        permission_classes)
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -43,20 +47,9 @@ def login(request):
     
     user_serialize = UserSerializer(instance=user)
     if user_serialize.data['login_erro'] >= 3:
-        return Response(
-            {
-                'error': 'Account blocked due to excessive login errors. Contact an administrator.'
-            },
-            status=status.HTTP_401_UNAUTHORIZED
-        )
-    
+        raise PermissionDenied(detail='error: Account blocked due to excessive login errors. Contact an administrator.')
     if not user.is_active:
-        return Response(
-            {
-                'error': 'User is inactive'
-            },
-            status=status.HTTP_401_UNAUTHORIZED
-        )
+        raise PermissionDenied(detail='error: User is inactive.')
 
     if check_password(password, user.password):
         token = RefreshToken.for_user(user)
@@ -82,12 +75,7 @@ def login(request):
         user.save()
 
         if user.login_erro >= 3:
-            return Response(
-                {
-                    'error': 'Account blocked due to excessive login errors. Contact an administrator.'
-                },
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+            raise PermissionDenied(detail='error: Account blocked due to excessive login errors. Contact an administrator.')
         else:
             return Response(
                 {
@@ -105,12 +93,7 @@ def logout(request, id):
     user_id = token['user_id']
 
     if str(id) != user_id:
-        return Response(
-                {
-                    'error': 'No authorization for this procedure.'
-                },
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+        raise PermissionDenied(detail='error: No authorization for this procedure.')
     
     user = get_object_or_404(CustomUser, id=id)
 
@@ -127,16 +110,56 @@ def logout(request, id):
     )
 
 @csrf_exempt
+@api_view(http_method_names=['POST'])
+def forget_password_send_email(request, email):
+    print(request.data)
+    print(f'email : {email}')
+    user = get_object_or_404(CustomUser, email=email)
+    print(user)
+    send_mail(
+            'Reset Password',
+            f'Acesse esse link: example.com.br para começar a mudar seu password',
+            'rafaeldevtesting@gmail.com',
+            [user.email],
+            fail_silently=False,
+        )
+
+    return Response(
+        {
+            'message' : 'send email'
+        },
+        status=status.HTTP_200_OK
+    )
+
+@csrf_exempt
 @api_view(http_method_names=['PATCH'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 def change_password_by_settings(request, id):
     token = request.auth
     user_id = token['user_id']
+
+    if str(id) != user_id:
+        raise PermissionDenied(detail='error: No authorization for this procedure.')
+    
+    code = get_object_or_404(VerificationCode, id=id)
+
+    if not code.code_verificated:
+        raise PermissionDenied(detail='error: Code without verification.')
+    
+    user = get_object_or_404(CustomUser,id=id)
+    result = UserSerializer(
+        instance=user,
+        data=request.data,
+        partial=True
+    )
+    result.is_valid(raise_exception=True)
+    result.save()    
     return Response(
         {
-            'change password'
-        }
+            'user': 'change password'
+        },
+        status=status.HTTP_200_OK
     )
 
 @csrf_exempt
@@ -148,9 +171,75 @@ def change_password_by_login_page(request, email):
     user_id = token['user_id']
     return Response(
         {
-            'change password'
+            'message' : 'change password'
         }
     )
+
+@csrf_exempt
+@api_view(http_method_names=['POST'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def send_verification_code(request):
+    user = request.user
+    if user.is_authenticated:
+        code = str(random.randint(100000, 999999))
+        VerificationCode.objects.create(user=user, code=code)
+            
+        # Envie o código por e-mail
+        send_mail(
+            'Código de Verificação',
+            f'Seu código de verificação é: {code}',
+            'rafaeldevtesting@gmail.com',
+            [user.email],
+            fail_silently=False,
+        )
+            
+        return Response(
+            {
+                'detail': 'Código enviado com sucesso.'
+            }, 
+            status=status.HTTP_200_OK
+        )
+    else:
+        return Response(
+            {
+                'detail': 'Usuário não autenticado.'
+            }, 
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+
+@csrf_exempt
+@api_view(http_method_names=['POST'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def verify_code(request):
+    user = request.user
+    code = request.data.get('code', None)
+        
+    if user.is_authenticated and code:
+        # Verifique se o código está correto
+        if VerificationCode.objects.filter(user=user, code=code).exists():
+            # Lógica para permitir a alteração da senha
+            return Response(
+                {
+                    'detail': 'Código verificado com sucesso.'
+                }, 
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(
+                {
+                    'detail': 'Código inválido.'
+                }, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    else:
+        return Response(
+            {
+                'detail': 'Usuário não autenticado ou código ausente.'
+            }, 
+            status=status.HTTP_401_UNAUTHORIZED
+        )
 
 @csrf_exempt
 @api_view(http_method_names=['GET'])

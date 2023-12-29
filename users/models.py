@@ -7,10 +7,6 @@ from django.db import models
 from project import settings
 
 
-class Device(models.Model):
-    name = models.CharField(max_length=100)
-    user = models.ForeignKey('CustomUser', on_delete=models.CASCADE)
-
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -77,3 +73,14 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.email
+
+class VerificationCode(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    code_verificated = models.BooleanField(default=False)
+
+
+class Device(models.Model):
+    name = models.CharField(max_length=100)
+    user = models.ForeignKey('CustomUser', on_delete=models.CASCADE)

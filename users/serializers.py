@@ -1,7 +1,7 @@
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 
-from .models import CustomUser, Device
+from .models import CustomUser, Device, VerificationCode
 
 
 class UserSerializer (serializers.ModelSerializer):
@@ -78,3 +78,8 @@ class DeviceSerializer (serializers.ModelSerializer):
         instance.user = validated_data.get('user', instance.user)
         instance.save()
         return instance
+
+class VerificationCodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VerificationCode
+        fields = ['user', 'code', 'created_at', 'code_verificated']
