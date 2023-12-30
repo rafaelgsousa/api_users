@@ -126,10 +126,13 @@ def send_verification_code_before_login(request, email=None):
     user = get_object_or_404(CustomUser, email=email)
 
     code = str(random.randint(100000, 999999))
-    
-    VerificationCode.objects.create(user=user.id, code=code)
 
-    # Envie o código por e-mail
+    check = VerificationCode.objects.filter(user=user)
+
+    check.delete()
+    
+    VerificationCode.objects.create(user=user, code=code)
+
     send_mail(
         subject='Link to Change Password',
         message='',
@@ -158,9 +161,7 @@ def verify_code_before_login(request):
 
     code_req = get_object_or_404(VerificationCode,code=sent_code)
 
-    code = VerifCodeSerializer(code_req)
-
-    if timezone.now() - code.created_at > 60:
+    if (timezone.now() - code_req.created_at).total_seconds() > 60:
         raise ValidationError({'detail': 'The code has expired. Submit a new code.'})
     
     result = VerifCodeSerializer(
@@ -168,6 +169,7 @@ def verify_code_before_login(request):
                 data={'code_verificated':True},
                 partial=True
             )
+
     result.is_valid(raise_exception=True)
 
     result.save()
@@ -183,15 +185,13 @@ def verify_code_before_login(request):
 @api_view(http_method_names=['PATCH'])
 def change_password_before_login(request, email):
 
-    user_db = get_object_or_404(CustomUser, email=email)
-
-    user = UserSerializer(user_db)
+    user = get_object_or_404(CustomUser, email=email)
     
     code_db = get_object_or_404(VerificationCode,user=user.id)
 
     if not code_db.code_verificated:
         raise PermissionDenied(detail='error: No authorization for this procedure.')
-    
+
     result = UserSerializer(
                             instance=user,
                             data=request.data,
@@ -201,8 +201,7 @@ def change_password_before_login(request, email):
 
     result.save()
 
-    # Think later whether it is better to delete the code or not
-    # code_db.delete()
+    code_db.delete()
 
     return Response(
         {
@@ -221,10 +220,13 @@ def send_verification_code_by_settings(request):
     user = get_object_or_404(CustomUser, id=user_id)
 
     code = str(random.randint(100000, 999999))
-    
-    VerificationCode.objects.create(user=user.id, code=code)
 
-    # Envie o código por e-mail
+    check = VerificationCode.objects.filter(user=user)
+
+    check.delete()
+    
+    VerificationCode.objects.create(user=user, code=code)
+
     send_mail(
         subject='Link to Change Password',
         message='',
@@ -255,9 +257,7 @@ def verify_code_by_settings(request):
 
     code_req = get_object_or_404(VerificationCode,code=sent_code)
 
-    code = VerifCodeSerializer(code_req)
-
-    if timezone.now() - code.created_at > 60:
+    if (timezone.now() - code_req.created_at).total_seconds() > 60:
         raise ValidationError({'detail': 'The code has expired. Submit a new code.'})
     
     result = VerifCodeSerializer(
@@ -283,13 +283,14 @@ def verify_code_by_settings(request):
 def change_password_by_settings(request):
     token = request.auth
     user_id = token['user_id']
+
+    user = get_object_or_404(CustomUser,id=user_id)
     
-    code = get_object_or_404(VerificationCode, id=user_id)
+    code = get_object_or_404(VerificationCode, user=user.id)
 
     if not code.code_verificated:
         raise PermissionDenied(detail='error: Code without verification.')
     
-    user = get_object_or_404(CustomUser,id=user_id)
 
     result = UserSerializer(
         instance=user,
@@ -299,7 +300,9 @@ def change_password_by_settings(request):
     
     result.is_valid(raise_exception=True)
 
-    result.save()    
+    result.save()
+
+    code.delete()
 
     return Response(
         {

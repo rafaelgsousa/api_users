@@ -1,4 +1,5 @@
 from django.contrib.auth.hashers import make_password
+from django.utils.dateparse import parse_datetime
 from rest_framework import serializers
 
 from .models import CustomUser, Device, VerificationCode
@@ -95,11 +96,21 @@ class VerifCodeSerializer(serializers.ModelSerializer):
         return user
 
     def update(self, instance, validated_data):
-        instance.user = validated_data.get('email', instance.user),
-        instance.code = validated_data.get('first_name', instance.code),
-        instance.created_at = validated_data.get('last_name', instance.created_at),
-        instance.code_verificated = validated_data.get('email', instance.code_verificated),
+        instance.code = validated_data.get('code', instance.code)
 
+        created_at_str = validated_data.get('created_at')
+        if created_at_str:
+            instance.created_at = parse_datetime(created_at_str)
+
+        code_verificated = validated_data.get('code_verificated', instance.code_verificated)
+        instance.code_verificated = bool(code_verificated)
+
+        user_email = validated_data.get('user', instance.user.email)
+        user = CustomUser.objects.get(email=user_email)
+
+        if user:
+            instance.user = user
+        
         instance.save()
-
+        
         return instance
