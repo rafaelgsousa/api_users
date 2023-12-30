@@ -149,7 +149,7 @@ def send_verification_code_before_login(request, email=None):
 
     return Response(
         {
-            'detail': 'Código enviado com sucesso.'
+            'message': 'Code sent successfully.'
         }, 
         status=status.HTTP_200_OK
     )
@@ -176,7 +176,7 @@ def verify_code_before_login(request):
 
     return Response(
                 {
-                    'detail': 'Código verificado com sucesso.'
+                    'message': 'Code verified successfully.'
                 },
                 status=status.HTTP_200_OK
             )
@@ -205,7 +205,7 @@ def change_password_before_login(request, email):
 
     return Response(
         {
-            'message' : 'change password'
+            'message' : 'Change password'
         }
     )
 
@@ -243,7 +243,7 @@ def send_verification_code_by_settings(request):
 
     return Response(
         {
-            'detail': 'Código enviado com sucesso.'
+            'message': 'Code sent successfully.'
         }, 
         status=status.HTTP_200_OK
     )
@@ -271,7 +271,7 @@ def verify_code_by_settings(request):
 
     return Response(
                 {
-                    'detail': 'Código verificado com sucesso.'
+                    'detail': 'Code verified successfully.'
                 },
                 status=status.HTTP_200_OK
             )
