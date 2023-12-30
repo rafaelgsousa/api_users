@@ -79,8 +79,6 @@ class VerificationCode(models.Model):
     code = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
     code_verificated = models.BooleanField(default=False)
-
-
 class Device(models.Model):
     name = models.CharField(max_length=100)
     user = models.ForeignKey('CustomUser', on_delete=models.CASCADE)

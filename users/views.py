@@ -1,17 +1,16 @@
-import email.message
 import os
 import random
-import smtplib
 
 from django.contrib.auth.hashers import check_password
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from dotenv import load_dotenv
 from rest_framework import status
 from rest_framework.decorators import (api_view, authentication_classes,
                                        permission_classes)
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -47,13 +46,16 @@ def register(request):
 @api_view(http_method_names=['POST'])
 def login(request):
     email = request.data.get('email')
+
     password = request.data.get('password')
 
     user = get_object_or_404(CustomUser,email=email)
     
     user_serialize = UserSerializer(instance=user)
+
     if user_serialize.data['login_erro'] >= 3:
         raise PermissionDenied(detail='error: Account blocked due to excessive login errors. Contact an administrator.')
+    
     if not user.is_active:
         raise PermissionDenied(detail='error: User is inactive.')
 
@@ -61,7 +63,9 @@ def login(request):
         token = RefreshToken.for_user(user)
 
         user.is_logged_in = True
+
         user.save()
+
         if user.login_erro > 0:
             user.login_erro = CustomUser.LoginError.ZERO
             user.save()
@@ -117,68 +121,89 @@ def logout(request, id):
 
 @csrf_exempt
 @api_view(http_method_names=['POST'])
-def forget_password_send_email(request, email=None):
-    # print(request.data)
-    print(f'email : {email}')
-    email_user = email if email != None else "elderrafaelgomes@gmail.com"
-    user = get_object_or_404(CustomUser, email=email_user)
+def send_verification_code_before_login(request, email=None):
 
+    user = get_object_or_404(CustomUser, email=email)
+
+    code = str(random.randint(100000, 999999))
+    
+    VerificationCode.objects.create(user=user.id, code=code)
+
+    # Envie o código por e-mail
     send_mail(
-            subject='Test',
-            message='',
-            from_email=f'{os.getenv("EMAIL_HOST_USER")}',
-            recipient_list=[f'{user.email}'],
-            fail_silently=False,
-            html_message="""
-                <p>Mais um test</p>
-            """
-        )
+        subject='Link to Change Password',
+        message='',
+        from_email=f'{os.getenv("EMAIL_HOST_USER")}',
+        recipient_list=[f'{user.email}'],
+        fail_silently=False,
+        html_message=f"""
+            <h1>Verification Code</h1>
+            <br>
+            <br>
+            <p>Code: <b>{code}</b> </p>
+        """
+    )
 
     return Response(
         {
-            'message' : 'send email'
-        },
+            'detail': 'Código enviado com sucesso.'
+        }, 
         status=status.HTTP_200_OK
     )
 
 @csrf_exempt
-@api_view(http_method_names=['PATCH'])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
-def change_password_by_settings(request, id):
-    token = request.auth
-    user_id = token['user_id']
+@api_view(http_method_names=['POST'])
+def verify_code_before_login(request):
+    sent_code = request.data.get('code', '')
 
-    if str(id) != user_id:
+    code_req = get_object_or_404(VerificationCode,code=sent_code)
+
+    code = VerifCodeSerializer(code_req)
+
+    if timezone.now() - code.created_at > 60:
+        raise ValidationError({'detail': 'The code has expired. Submit a new code.'})
+    
+    result = VerifCodeSerializer(
+                instance=code_req,
+                data={'code_verificated':True},
+                partial=True
+            )
+    result.is_valid(raise_exception=True)
+
+    result.save()
+
+    return Response(
+                {
+                    'detail': 'Código verificado com sucesso.'
+                },
+                status=status.HTTP_200_OK
+            )
+
+@csrf_exempt
+@api_view(http_method_names=['PATCH'])
+def change_password_before_login(request, email):
+
+    user_db = get_object_or_404(CustomUser, email=email)
+
+    user = UserSerializer(user_db)
+    
+    code_db = get_object_or_404(VerificationCode,user=user.id)
+
+    if not code_db.code_verificated:
         raise PermissionDenied(detail='error: No authorization for this procedure.')
     
-    code = get_object_or_404(VerificationCode, id=id)
-
-    if not code.code_verificated:
-        raise PermissionDenied(detail='error: Code without verification.')
-    
-    user = get_object_or_404(CustomUser,id=id)
     result = UserSerializer(
-        instance=user,
-        data=request.data,
-        partial=True
-    )
+                            instance=user,
+                            data=request.data,
+                            partial=True
+                        )
     result.is_valid(raise_exception=True)
-    result.save()    
-    return Response(
-        {
-            'user': 'change password'
-        },
-        status=status.HTTP_200_OK
-    )
 
-@csrf_exempt
-@api_view(http_method_names=['PATCH'])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
-def change_password_by_login_page(request, email):
-    token = request.auth
-    user_id = token['user_id']
+    result.save()
+
+    # Think later whether it is better to delete the code or not
+    # code_db.delete()
+
     return Response(
         {
             'message' : 'change password'
@@ -189,67 +214,99 @@ def change_password_by_login_page(request, email):
 @api_view(http_method_names=['POST'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
-def send_verification_code(request):
-    user = request.user
-    if user.is_authenticated:
-        code = str(random.randint(100000, 999999))
-        VerificationCode.objects.create(user=user, code=code)
-            
-        # Envie o código por e-mail
-        send_mail(
-            'Código de Verificação',
-            f'Seu código de verificação é: {code}',
-            'rafaeldevtesting@gmail.com',
-            [user.email],
-            fail_silently=False,
-        )
-            
-        return Response(
-            {
-                'detail': 'Código enviado com sucesso.'
-            }, 
-            status=status.HTTP_200_OK
-        )
-    else:
-        return Response(
-            {
-                'detail': 'Usuário não autenticado.'
-            }, 
-            status=status.HTTP_401_UNAUTHORIZED
-        )
+def send_verification_code_by_settings(request):
+    token = request.auth
+    user_id = token['user_id']
+
+    user = get_object_or_404(CustomUser, id=user_id)
+
+    code = str(random.randint(100000, 999999))
+    
+    VerificationCode.objects.create(user=user.id, code=code)
+
+    # Envie o código por e-mail
+    send_mail(
+        subject='Link to Change Password',
+        message='',
+        from_email=f'{os.getenv("EMAIL_HOST_USER")}',
+        recipient_list=[f'{user.email}'],
+        fail_silently=False,
+        html_message=f"""
+            <h1>Verification Code</h1>
+            <br>
+            <br>
+            <p>Code: <b>{code}</b> </p>
+        """
+    )
+
+    return Response(
+        {
+            'detail': 'Código enviado com sucesso.'
+        }, 
+        status=status.HTTP_200_OK
+    )
 
 @csrf_exempt
 @api_view(http_method_names=['POST'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
-def verify_code(request):
-    user = request.user
-    code = request.data.get('code', None)
-        
-    if user.is_authenticated and code:
-        # Verifique se o código está correto
-        if VerificationCode.objects.filter(user=user, code=code).exists():
-            # Lógica para permitir a alteração da senha
-            return Response(
+def verify_code_by_settings(request):
+    sent_code = request.data.get('code', '')
+
+    code_req = get_object_or_404(VerificationCode,code=sent_code)
+
+    code = VerifCodeSerializer(code_req)
+
+    if timezone.now() - code.created_at > 60:
+        raise ValidationError({'detail': 'The code has expired. Submit a new code.'})
+    
+    result = VerifCodeSerializer(
+                instance=code_req,
+                data={'code_verificated':True},
+                partial=True
+            )
+    result.is_valid(raise_exception=True)
+
+    result.save()
+
+    return Response(
                 {
                     'detail': 'Código verificado com sucesso.'
-                }, 
+                },
                 status=status.HTTP_200_OK
             )
-        else:
-            return Response(
-                {
-                    'detail': 'Código inválido.'
-                }, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-    else:
-        return Response(
-            {
-                'detail': 'Usuário não autenticado ou código ausente.'
-            }, 
-            status=status.HTTP_401_UNAUTHORIZED
-        )
+
+@csrf_exempt
+@api_view(http_method_names=['PATCH'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def change_password_by_settings(request):
+    token = request.auth
+    user_id = token['user_id']
+    
+    code = get_object_or_404(VerificationCode, id=user_id)
+
+    if not code.code_verificated:
+        raise PermissionDenied(detail='error: Code without verification.')
+    
+    user = get_object_or_404(CustomUser,id=user_id)
+
+    result = UserSerializer(
+        instance=user,
+        data=request.data,
+        partial=True
+    )
+    
+    result.is_valid(raise_exception=True)
+
+    result.save()    
+
+    return Response(
+        {
+            'user': 'change password'
+        },
+        status=status.HTTP_200_OK
+    )
 
 @csrf_exempt
 @api_view(http_method_names=['GET'])

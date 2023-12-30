@@ -79,7 +79,27 @@ class DeviceSerializer (serializers.ModelSerializer):
         instance.save()
         return instance
 
-class VerificationCodeSerializer(serializers.ModelSerializer):
+class VerifCodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = VerificationCode
         fields = ['user', 'code', 'created_at', 'code_verificated']
+
+    def create(self, validated_data):
+        user = VerificationCode.objects.create(
+            user = validated_data['email'],
+            code = validated_data['first_name'],
+            created_at = validated_data['last_name'],
+            code_verificated = validated_data['email'],
+        )
+
+        return user
+
+    def update(self, instance, validated_data):
+        instance.user = validated_data.get('email', instance.user),
+        instance.code = validated_data.get('first_name', instance.code),
+        instance.created_at = validated_data.get('last_name', instance.created_at),
+        instance.code_verificated = validated_data.get('email', instance.code_verificated),
+
+        instance.save()
+
+        return instance
