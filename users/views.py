@@ -390,8 +390,10 @@ def update_user(request, id):
         data=request.data,
         partial=True
     )
+
     result.is_valid(raise_exception=True)
-    result.save()    
+    result.save()
+   
     return Response(
         {
             'user': result.data
