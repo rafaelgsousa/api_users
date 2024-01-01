@@ -155,7 +155,7 @@ def send_verification_code_before_login(request, email=None):
     )
 
 @csrf_exempt
-@api_view(http_method_names=['POST'])
+@api_view(http_method_names=['PATCH'])
 def verify_code_before_login(request):
     sent_code = request.data.get('code', '')
 
@@ -249,7 +249,7 @@ def send_verification_code_by_settings(request):
     )
 
 @csrf_exempt
-@api_view(http_method_names=['POST'])
+@api_view(http_method_names=['PATCH'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 def verify_code_by_settings(request):
