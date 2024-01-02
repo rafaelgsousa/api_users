@@ -289,7 +289,7 @@ verify_code/
 	code: 957763
 }
 ```
-
+### Responses
 <p style="font-weight: 900"> Success </p>
 
 ```bash
@@ -336,6 +336,7 @@ Status code - 400
 	password: "123456789"
 }
 ```
+### Responses
 <p style="font-weight: 900"> Success </p>
 
 ```bash
@@ -404,7 +405,7 @@ settings/verify_code/
 	code: 957763
 }
 ```
-
+### Responses
 <p style="font-weight: 900"> Success </p>
 
 ```bash
@@ -451,6 +452,7 @@ Status code - 400
 	password: "123456789"
 }
 ```
+### Responses
 <p style="font-weight: 900"> Success </p>
 
 ```bash
@@ -493,7 +495,7 @@ logout/<uuid:id>/
 ```bash
 
 ```
-
+### Responses
 <p style="font-weight: 900"> Success </p>
 
 ```bash
@@ -540,6 +542,7 @@ Status code - 404
 ```bash
 
 ```
+### Responses
 <p style="font-weight: 900"> Success </p>
 
 ```bash
