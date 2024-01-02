@@ -18,7 +18,7 @@
 
 ```bash
 # Enter the environment in linux S.O
-$ source venv/bin/
+$ source venv/bin/activate
 ```
 ```bash
 # Install all dependencies
