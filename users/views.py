@@ -289,7 +289,7 @@ def change_password_by_settings(request):
     code = get_object_or_404(VerificationCode, user=user.id)
 
     if not code.code_verificated:
-        raise PermissionDenied(detail='error: Code without verification.')
+        raise PermissionDenied(detail='error: No authorization for this procedure.')
     
 
     result = UserSerializer(
@@ -359,6 +359,8 @@ def get_users(request):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 def update_user(request, id):
+    if not request.data:
+        raise ValidationError({'detail': 'request without body.'})
     token = request.auth
     user_id = token['user_id']
     user_req = get_object_or_404(CustomUser,id=user_id)

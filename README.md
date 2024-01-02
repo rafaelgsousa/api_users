@@ -44,26 +44,52 @@ $ python manage.py runserver
 
 ## Fields:
 ```bash
-id = models.UUIDField(primary_key=True, default=uuid4)
-first_name = models.CharField(max_length=50)
-last_name = models.CharField(max_length=50)
-email = models.EmailField(max_length=50, unique=True)
-phone = models.CharField(max_length=20, unique=True)
-picture = models.ImageField()
-password = models.CharField(max_length=100)
-is_active = models.BooleanField(default=True)
-nv_user = models.IntegerField(default=NivelUsuario.ZERO)
-is_logged_in = models.BooleanField(default=False)
-login_erro = models.IntegerField(default=LoginError.ZERO)
-created_at = models.DateTimeField(auto_now_add=True)
-update_at = models.DateTimeField(auto_now=True)
-last_login_sistem = models.DateTimeField(null=True)
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    first_name = models.CharField(max_length=50)
+    last_name = models.CharField(max_length=50)
+    email = models.EmailField(max_length=50, unique=True)
+    phone = models.CharField(max_length=20, unique=True, blank=True)
+    picture = models.ImageField(upload_to='pictures/%Y/%m/%d', blank=True)
+    password = models.CharField(max_length=100)
+    is_active = models.BooleanField(default=True)
+    nv_user = models.IntegerField(choices=NivelUsuario.choices, default=NivelUsuario.ZERO)
+    is_logged_in = models.BooleanField(default=False)
+    login_erro = models.IntegerField(choices=LoginError.choices, default=LoginError.ZERO)
+    created_at = models.DateTimeField(auto_now_add=True)
+    update_at = models.DateTimeField(auto_now=True)
+    last_login_sistem = models.DateTimeField(blank=True, null=True)
 ```
 
 ### BaseUrl:
 ```bash
 http://127.0.0.1:8000/api/users/
 ```
+
+## Endpoints:
+- `register/`: Used to register the user.
+- `login/`: Login endpoint.
+- `send_code/<str:email>/`: Endpoint to send code to the email that will be necessary to authorize password rescue/change before logging in.
+- `verify_code/`: Endpoint used to verify code sent by email.
+- `change_password/<str:email>/`: Endpoint used to change the user's password after checking the code sent by email.
+- `settings/send_code/`:  Endpoint to send code to the email that will be necessary to authorize password changes after login.
+- `settings/verify_code/`: Endpoint used to verify code sent by email, after login.
+- `settings/change_password/`: Endpoint used to change the user's password after checking the code sent by email, after login.
+- `logout/<uuid:id>/`: Endpoint to log out.
+- `<uuid:id>/`: Endpoint to retrieve data from a user.
+- `list/`: Endpoint to collect data from all users.
+- `update_user/<uuid:id>/`: Endpoint used to update a user's data.
+- `delete_user/<uuid:id>/`:  Endpoint used to delete user from the database.
+
+### Nota:
+For the first five endpoints, no token is required
+
+## Swagger
+
+You can access the Swagger documentation at `http://127.0.0.1:8000/swagger/`.
+
+## ReDoc
+
+You can access the ReDoc documentation at `http://127.0.0.1:8000/redoc/`.
 
 ### Method: POST
 ### Endpoint
@@ -73,7 +99,13 @@ register/
 
 ### Body  <span style="color: red">[required]</span>
 ```bash
-Schema
+{
+    first_name: "john",
+    last_name: "doe",
+    email: "john.doe@gmail.com",
+    phone: "+55 086 999999999",
+    password: "123456789",
+}
 ```
 
 ### Responses
@@ -84,23 +116,46 @@ Status code - 201
 ```
 ```bash
 {
-    data: { Data saved },
-    message: 'App settings created'
+	user_id: {uuid4 id},
+	register: "john.doe@gmail.com"
 }
 ```
 
 <p style="font-weight: 900"> Error </p>
-<p> Situations where the body was not sent correctly.</p>
+<p> Situation in which you forgot to send fields that cannot be empty.</p>
+
+```bash
+Status code - 400
+```
 
 ```bash
 {
-    status code: 400,
-    message content: [ Description of unmet requirements],
-    error - 'Bad request',
+	first_name: [
+		"This field is required."
+	],
+	last_name: [
+		"This field is required."
+	],
+	password: [
+		"This field is required."
+	]
 }
 ```
 
+<p style="font-weight: 900"> Error </p>
+<p> I try to use a unique value that is already being used by a user.</p>
 
+```bash
+Status code - 400
+```
+
+```bash
+{
+	email: [
+		"custom user with this email already exists."
+	],
+}
+```
 
 ### Method: POST
 ### Endpoint
@@ -108,9 +163,12 @@ Status code - 201
 login/
 ```
 
-### Body
+### Body  <span style="color: red">[required]</span>
 ```bash
-
+{
+	email: "john.doe@gmail.com",
+	password: "123456789"
+}
 ```
 
 ### Responses
@@ -121,36 +179,69 @@ Status code - 200
 ```
 ```bash
 {
-    data: [
-      {
-        appId: string,
-        paymentOptions: [string],
-        shippingOptions: [string],
-        currency: string,
-        taxRate: number,
-        invoiceIntegration: {
-          enabled: boolean,
-          provider: string,
-          apiKey: string,
-        },
-        deliveryIntegration: {
-          enabled: boolean,
-          provider: string,
-          apiKey: string,
-        }
-      },...
-    ]
+	token: {
+		access: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzA0MTQ1OTk2LCJpYXQiOjE3MDQxNDIzOTYsImp0aSI6IjFiODIwYzk0ZjE5NTQyN2Y5OGRhODBjMzJhZDU0Zjg5IiwidXNlcl9pZCI6ImFjMjRhYzcyLTQzODItNGQyOS05YTVkLTczOWZjZjJkYzMyNCJ9.iGvyEOIaWMz_srrIrd9dK7lyeqihTmE86QxXYnjnfdQ",
+		refresh: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTcwNDIyODc5NiwiaWF0IjoxNzA0MTQyMzk2LCJqdGkiOiJlYTMyZmIyNjRlNmY0Y2VjYjAyNDgwODhlMDRjYTU5OCIsInVzZXJfaWQiOiJhYzI0YWM3Mi00MzgyLTRkMjktOWE1ZC03MzlmY2YyZGMzMjQifQ.sK_hfYcLq4vNAWsHAb8gBekxqhwTbE_gzBf4E3-Qpkw"
+	},
+	user: {
+		id: "ac24ac72-4382-4d29-9a5d-739fcf2dc324",
+		first_name: "john",
+		last_name: "doe",
+		email: "john.doe@gmail.com",
+		phone: "+55 086 999999999",
+		picture: null,
+		login_erro: 0,
+		is_logged_in: true,
+		is_active: true
+	}
 }
 ```
-<p style="font-weight: 900"> Error </p>
-<p> Erro interno do servidor</p>
+<p style="font-weight: 900"> Errors </p>
+<p> User tries to log in after having the wrong password 3 or more times</p>
 
 ```bash
+Status code - 403
+```
+```bash
 {
-    status code: 500,
-    error: 'Internal server error.',
+    error: Account blocked due to excessive login errors. Contact an administrator.',
 }
 ```
+
+<p> User gets the password wrong the third time</p>
+
+```bash
+Status code - 403
+```
+```bash
+{
+    error: Account blocked due to excessive login errors. Contact an administrator.',
+}
+```
+
+<p> User is not active</p>
+
+```bash
+Status code - 403
+```
+```bash
+{
+    error: User is inactive.',
+}
+```
+
+<p> User got the password wrong up to two times</p>
+
+
+```bash
+Status code - 400
+```
+```bash
+{
+    error: Incorrect password or email. Three login errors lead to account lockout.',
+}
+```
+
 ### Method: POST
 ### Endpoint
 ```bash
@@ -169,42 +260,20 @@ Status code - 200
 Status code - 200
 ```
 ```bash
-{
-    data: {
-      appId: string,
-      paymentOptions: [string],
-      shippingOptions: [string],
-      currency: string,
-      taxRate: number,
-      invoiceIntegration: {
-        enabled: boolean,
-        provider: string,
-        apiKey: string,
-      },
-      deliveryIntegration: {
-        enabled: boolean,
-        provider: string,
-        apiKey: string,
-      }
-    }
+ {
+   message: 'Code sent successfully.'
 }
 ```
 
 <p style="font-weight: 900"> Error </p>
-<p> Not Found</p>
+<p> Try to recover a user password with a non-existent email address at the bank</p>
 
 ```bash
-{
-    status code: 404,
-    message: 'App settings not found',
-}
+Status code - 404
 ```
-<p> Erro interno do servidor</p>
-
 ```bash
 {
-    status code: 500,
-    error: 'Internal server error.',
+	"detail": "Not found."
 }
 ```
 
@@ -214,27 +283,12 @@ Status code - 200
 verify_code/
 ```
 
-### Body
+### Body  <span style="color: red">[required]</span>
 ```bash
 {
-      appId: string,
-      paymentOptions: [string],
-      shippingOptions: [string],
-      currency: string,
-      taxRate: number,
-      invoiceIntegration: {
-        enabled: boolean,
-        provider: string,
-        apiKey: string,
-      },
-      deliveryIntegration: {
-        enabled: boolean,
-        provider: string,
-        apiKey: string,
-      }
-    }
+	code: 957763
+}
 ```
-<p>Obs: All fields are optional.</p>
 
 <p style="font-weight: 900"> Success </p>
 
@@ -243,52 +297,30 @@ Status code - 200
 ```
 ```bash
 {
-    data: {
-      appId: string,
-      paymentOptions: [string],
-      shippingOptions: [string],
-      currency: string,
-      taxRate: number,
-      invoiceIntegration: {
-        enabled: boolean,
-        provider: string,
-        apiKey: string,
-      },
-      deliveryIntegration: {
-        enabled: boolean,
-        provider: string,
-        apiKey: string,
-      }
-    }, 
-    message: 'App settings updated'
+    message: 'Code verified successfully.'
 }
 ```
 
 <p style="font-weight: 900"> Error </p>
-<p> Bad Request</p>
+<p> Sending a code with an expired time</p>
 
 ```bash
+Status code - 400
+```
+```bash
 {
-    status code: 400,
-    message: 'Bad Request.',
+	detail: "The code has expired. Submit a new code."
 }
 ```
 
-<p> Not Found</p>
+<p> sending non-existent code</p>
 
 ```bash
-{
-    status code: 404,
-    message: 'App settings not found',
-}
+Status code - 400
 ```
-
-<p> Erro interno do servidor</p>
-
 ```bash
 {
-    status code: 500,
-    error: 'Internal server error.',
+    detail: 'Not found',
 }
 ```
 
@@ -298,9 +330,11 @@ Status code - 200
 /change_password/<str:email>/
 ```
 
-### Body
+### Body  <span style="color: red">[required]</span>
 ```bash
-
+{
+	password: "123456789"
+}
 ```
 <p style="font-weight: 900"> Success </p>
 
@@ -309,81 +343,37 @@ Status code - 200
 ```
 ```bash
 {
-    data: {
-      appId: string,
-      paymentOptions: [string],
-      shippingOptions: [string],
-      currency: string,
-      taxRate: number,
-      invoiceIntegration: {
-        enabled: boolean,
-        provider: string,
-        apiKey: string,
-      },
-      deliveryIntegration: {
-        enabled: boolean,
-        provider: string,
-        apiKey: string,
-      }
-    }, 
-    message: 'App settings deleted'
+	message: "Change password"
 }
 ```
 <p style="font-weight: 900"> Error </p>
-<p> Not Found</p>
+<p> If the email does not exist in the bank or does not have a code attached to it</p>
 
 ```bash
-{
-    status code: 404,
-    message: 'App settings not found',
-}
+Status code - 404
 ```
-<p> Erro interno do servidor</p>
-
 ```bash
 {
-    status code: 500,
-    error: 'Internal server error.',
+    message: 'Not found',
 }
 ```
+<p> If the user code has not yet been verified</p>
+
+```bash
+Status code - 403
+```
+```bash
+{
+    error: 'No authorization for this procedure.',
+}
+```
+
 ### Method: POST
 ```bash
 settings/send_code/
 ```
 
-### Body  <span style="color: red">[required]</span>
-```bash
-Schema
-```
-
-### Responses
-<p style="font-weight: 900"> Success </p>
-
-```bash
-Status code - 201
-```
-```bash
-{
-    data: { Data saved },
-    message: 'App settings registered'
-}
-```
-
-<p style="font-weight: 900"> Error </p>
-<p> Situations where the body was not sent correctly.</p>
-
-```bash
-{
-    status code: 400,
-    message content: [ Description of unmet requirements ],
-    error - 'Bad request',
-}
-```
-### Method: PATCH
-### Endpoint
-```bash
-settings/verify_code/
-```
+### Bearer Token  <span style="color: red">[required]</span>
 
 ### Body
 ```bash
@@ -398,29 +388,54 @@ Status code - 200
 ```
 ```bash
 {
-    data: [
-      {
-        appId: string,
-        name: string,
-        description: string,
-        apiKey: string,
-        secretKey: string,
-        stripeApiKey: string,
-        stripeSecretKey: string,
-        callbackUrl: string,
-        jwtKay: string,
-        outherSettings: string,
-      },...
-    ]
+    message: 'Code sent successfully.'
 }
 ```
-<p style="font-weight: 900"> Error </p>
-<p> Internal server error</p>
 
+### Method: PATCH
+### Endpoint
+```bash
+settings/verify_code/
+```
+### Bearer Token  <span style="color: red">[required]</span>
+### Body  <span style="color: red">[required]</span>
 ```bash
 {
-    status code: 500,
-    error: 'Internal server error.',
+	code: 957763
+}
+```
+
+<p style="font-weight: 900"> Success </p>
+
+```bash
+Status code - 200
+```
+```bash
+{
+    message: 'Code verified successfully.'
+}
+```
+
+<p style="font-weight: 900"> Error </p>
+<p> Sending a code with an expired time</p>
+
+```bash
+Status code - 400
+```
+```bash
+{
+	detail: "The code has expired. Submit a new code."
+}
+```
+
+<p> sending non-existent code</p>
+
+```bash
+Status code - 400
+```
+```bash
+{
+    detail: 'Not found',
 }
 ```
 
@@ -429,13 +444,13 @@ Status code - 200
 ```bash
 /settings/change_password/
 ```
-
-### Body
+### Bearer Token  <span style="color: red">[required]</span>
+### Body  <span style="color: red">[required]</span>
 ```bash
-
+{
+	password: "123456789"
+}
 ```
-
-### Responses
 <p style="font-weight: 900"> Success </p>
 
 ```bash
@@ -443,36 +458,28 @@ Status code - 200
 ```
 ```bash
 {
-    data: {
-        appId: string,
-        name: string,
-        description: string,
-        apiKey: string,
-        secretKey: string,
-        stripeApiKey: string,
-        stripeSecretKey: string,
-        callbackUrl: string,
-        jwtKay: string,
-        outherSettings: string,
-      }
+	message: "Change password"
 }
 ```
-
 <p style="font-weight: 900"> Error </p>
-<p> Not Found</p>
+<p> User does not have a code attached</p>
 
 ```bash
+Status code - 404
+```
+```bash
 {
-    status code: 404,
-    message: 'App not found',
+    message: 'Not found',
 }
 ```
-<p> Internal server error</p>
+<p> If the user code has not yet been verified</p>
 
 ```bash
+Status code - 403
+```
+```bash
 {
-    status code: 500,
-    error: 'Internal server error.',
+    error: 'No authorization for this procedure.',
 }
 ```
 
@@ -481,23 +488,11 @@ Status code - 200
 ```bash
 logout/<uuid:id>/
 ```
-
+### Bearer Token  <span style="color: red">[required]</span>
 ### Body
 ```bash
-{
-        appId: string,
-        name: string,
-        description: string,
-        apiKey: string,
-        secretKey: string,
-        stripeApiKey: string,
-        stripeSecretKey: string,
-        callbackUrl: string,
-        jwtKay: string,
-        outherSettings: string,
-}
+
 ```
-<p>Obs: All fields are optional.</p>
 
 <p style="font-weight: 900"> Success </p>
 
@@ -506,47 +501,31 @@ Status code - 200
 ```
 ```bash
 {
-    data: {
-        appId: string,
-        name: string,
-        description: string,
-        apiKey: string,
-        secretKey: string,
-        stripeApiKey: string,
-        stripeSecretKey: string,
-        callbackUrl: string,
-        jwtKay: string,
-        outherSettings: string,
-      }, 
-    message: 'App settings updated'
+    user: "john.doe@gmail.com",
+    message: 'logout'
 }
 ```
 
 <p style="font-weight: 900"> Error </p>
-<p> Bad Request</p>
+<p> Different user logout attempt</p>
 
 ```bash
+Status code - 403
+```
+```bash
 {
-    status code: 400,
-    message: 'Bad Request.',
+    message: 'No authorization for this procedure.',
 }
 ```
 
-<p> Not Found</p>
+<p> Non-existent user id</p>
 
 ```bash
-{
-    status code: 404,
-    message: 'App not found',
-}
+Status code - 404
 ```
-
-<p> Internal server error</p>
-
 ```bash
 {
-    status code: 500,
-    error: 'Internal server error.',
+    message: 'Not found',
 }
 ```
 
@@ -556,6 +535,7 @@ Status code - 200
 <uuid:id>/
 ```
 
+### Bearer Token  <span style="color: red">[required]</span>
 ### Body
 ```bash
 
@@ -567,22 +547,20 @@ Status code - 200
 ```
 ```bash
 {
-    data: {
-        appId: string,
-        name: string,
-        description: string,
-        apiKey: string,
-        secretKey: string,
-        stripeApiKey: string,
-        stripeSecretKey: string,
-        callbackUrl: string,
-        jwtKay: string,
-        outherSettings: string,
-      }, 
-    message: 'App settings deleted'
+	user: {
+		id: "ac24ac72-4382-4d29-9a5d-739fcf2dc324",
+		first_name: "john",
+		last_name: "doe",
+		email: "john.doe@gmail.com",
+		phone: "+55 086 999999999",
+		picture: null,
+		login_erro: 0,
+		is_logged_in: true
+        is_active: true
+	}
 }
 ```
-<p style="font-weight: 900"> Error </p>
+<!-- <p style="font-weight: 900"> Error </p>
 <p> Not Found</p>
 
 ```bash
@@ -598,32 +576,43 @@ Status code - 200
     status code: 500,
     error: 'Internal server error.',
 }
-```
+``` -->
 ### Method: GET
 ### Endpoint
 ```bash
 list/
 ```
-
-### Body  <span style="color: red">[required]</span>
+### Bearer Token  <span style="color: red">[required]</span>
+### Body
 ```bash
-Schema
+
 ```
 
 ### Responses
 <p style="font-weight: 900"> Success </p>
 
 ```bash
-Status code - 201
+Status code - 200
 ```
 ```bash
 {
-    data: { Data saved },
-    message: 'Financial transactions registered'
+	users: [
+            {
+                id: "ac24ac72-4382-4d29-9a5d-739fcf2dc324",
+                first_name: "john",
+                last_name: "doe",
+                email: "john.doe@gmail.com",
+                phone: "+55 086 999999999",
+                picture: null,
+                login_erro: 0,
+                is_logged_in: true
+            },
+        ...
+    ]
 }
 ```
 
-<p style="font-weight: 900"> Error </p>
+<!-- <p style="font-weight: 900"> Error </p>
 <p> Situations where the body was not sent correctly.</p>
 
 ```bash
@@ -632,7 +621,7 @@ Status code - 201
     message content: [ Description of unmet requirements],
     error - 'Bad request',
 }
-```
+``` -->
 
 ### Method: PATCH
 ### Endpoint
@@ -640,9 +629,15 @@ Status code - 201
 update_user/<uuid:id>/
 ```
 
-### Body
+### Bearer Token  <span style="color: red">[required]</span>
+### Body  <span style="color: red">[required]</span>
 ```bash
-
+{
+    first_name: "john",
+    last_name: "doe",
+    email: "john.doe@gmail.com",
+    phone: "+55 086 999999999",
+},
 ```
 
 ### Responses
@@ -653,23 +648,20 @@ Status code - 200
 ```
 ```bash
 {
-    data: [
-      {
-        appId: string,
-        name: string,
-        description: string,
-        apiKey: string,
-        secretKey: string,
-        stripeApiKey: string,
-        stripeSecretKey: string,
-        callbackUrl: string,
-        jwtKay: string,
-        outherSettings: string,
-      },...
-    ]
+	user: {
+		id: "ac24ac72-4382-4d29-9a5d-739fcf2dc324",
+		first_name: "john",
+		last_name: "doe",
+		email: "john.doe@gmail.com",
+		phone: "+55 086 999999999",
+		picture: null,
+		login_erro: 0,
+		is_logged_in: true
+        is_active: true
+	}
 }
 ```
-<p style="font-weight: 900"> Error </p>
+<!-- <p style="font-weight: 900"> Error </p>
 <p> Internal server error</p>
 
 ```bash
@@ -677,14 +669,14 @@ Status code - 200
     status code: 500,
     error: 'Internal server error.',
 }
-```
+``` -->
 
 ### Method DELETE
 ### Endpoint
 ```bash
 /delete_user/<uuid:id>/
 ```
-
+### Bearer Token  <span style="color: red">[required]</span>
 ### Body
 ```bash
 
@@ -694,26 +686,13 @@ Status code - 200
 <p style="font-weight: 900"> Success </p>
 
 ```bash
-Status code - 200
+Status code - 204
 ```
 ```bash
-{
-    data: {
-        appId: string,
-        name: string,
-        description: string,
-        apiKey: string,
-        secretKey: string,
-        stripeApiKey: string,
-        stripeSecretKey: string,
-        callbackUrl: string,
-        jwtKay: string,
-        outherSettings: string,
-      }
-}
+
 ```
 
-<p style="font-weight: 900"> Error </p>
+<!-- <p style="font-weight: 900"> Error </p>
 <p> Not Found</p>
 
 ```bash
@@ -729,4 +708,4 @@ Status code - 200
     status code: 500,
     error: 'Internal server error.',
 }
-```
+``` -->
