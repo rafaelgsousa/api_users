@@ -62,13 +62,19 @@ def login(request):
     if check_password(password, user.password):
         token = RefreshToken.for_user(user)
 
-        user.is_logged_in = True
-
-        user.save()
+        update = {"is_logged_in" : True}
 
         if user.login_erro > 0:
-            user.login_erro = CustomUser.LoginError.ZERO
-            user.save()
+            update.login_erro = CustomUser.LoginError.ZERO
+
+        result = UserSerializer(
+            instance=user,
+            data=update,
+            partial=True
+            )
+        
+        result.is_valid(raise_exception=True)
+        user.save(update_fields=list(update.keys()))
 
         return Response(
             {
@@ -81,8 +87,15 @@ def login(request):
             status=status.HTTP_200_OK
         )
     else:
-        user.login_erro += 1
-        user.save()
+        update = {"login_erro" : user.login_erro + 1}
+        result = UserSerializer(
+            instance=user,
+            data=update,
+            partial=True
+            )
+        
+        result.is_valid(raise_exception=True)
+        user.save(update_fields=list(update.keys()))
 
         if user.login_erro >= 3:
             raise PermissionDenied(detail='error: Account blocked due to excessive login errors. Contact an administrator.')
