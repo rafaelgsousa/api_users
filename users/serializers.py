@@ -1,4 +1,5 @@
 from django.contrib.auth.hashers import make_password
+from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from rest_framework import serializers
 
@@ -8,14 +9,13 @@ from .models import CustomUser, Device, VerificationCode
 class UserSerializer (serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'password', 'picture', 'login_erro', 'is_logged_in', 'nv_user', 'is_active']
+        fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'password', 'picture', 'login_erro', 'is_logged_in', 'nv_user', 'is_active', 'update_at']
 
     password = serializers.CharField(write_only=True, required=True)
     id = serializers.UUIDField(read_only=True)
     nv_user = serializers.IntegerField(write_only=True, required=False)
 
     def create(self, validated_data):
-        # Crie um novo usuário com os dados validados
         user = CustomUser.objects.create(
             username=validated_data['email'],
             first_name=validated_data['first_name'],
@@ -23,10 +23,10 @@ class UserSerializer (serializers.ModelSerializer):
             email=validated_data['email'],
             phone=validated_data['phone'],
             picture=validated_data.get('picture', None),
-            password=make_password(validated_data['password']),  # Criptografa a senha
-            nv_user=CustomUser.NivelUsuario.ZERO,  # Define o nível do usuário como ZERO por padrão
-            is_logged_in=False,  # Define que o usuário não está logado por padrão
-            login_erro=CustomUser.LoginError.ZERO,  # Define o erro de login como ZERO por padrão
+            password=make_password(validated_data['password']),
+            nv_user=CustomUser.NivelUsuario.ZERO,
+            is_logged_in=False,
+            login_erro=CustomUser.LoginError.ZERO,
         )
         
         return user
@@ -44,6 +44,12 @@ class UserSerializer (serializers.ModelSerializer):
         if password:
             instance.password = make_password(password)
 
+        try:
+            instance.save()
+        except Exception as e:
+            raise serializers.ValidationError(f"Error saving changes: {e}")
+
+        instance.update_at = timezone.now()
         instance.save()
 
         return instance
@@ -66,7 +72,6 @@ class DeviceSerializer (serializers.ModelSerializer):
         fields = ('name', 'user')
 
     def create(self, validated_data):
-        # Crie um novo usuário com os dados validados
         device = Device.objects.create(
             name=validated_data['name'],
             user=validated_data['user'],
