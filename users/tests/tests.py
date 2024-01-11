@@ -96,12 +96,26 @@ class TestRegisterView(APITestCase):
         response = self.client.post('/api/users/register/', registration_data)
 
         response = self.client.post('/api/users/login/', self.bad_login)
-        user = CustomUser.objects.filter(email='johndoe@example.com')[0]
+        user = CustomUser.objects.filter(email=registration_data['email'])[0]
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
         self.assertEqual(response.data['error'],'Incorrect password or email. Three login errors lead to account lockout')
         self.assertEqual(user.login_erro,1)
+
+    def test_login_with_incorrect_password_three_times(self):
+        registration_data = self.user
+
+        response = self.client.post('/api/users/register/', registration_data)
+        self.client.post('/api/users/login/', self.bad_login)
+        self.client.post('/api/users/login/', self.bad_login)
+        response = self.client.post('/api/users/login/', self.bad_login)
+        user = CustomUser.objects.filter(email=registration_data['email'])[0]
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn('detail', response.data)
+        self.assertEqual(response.data['detail'],'error: Account blocked due to excessive login errors. Contact an administrator.')
+        self.assertEqual(user.login_erro,3)
 
     def test_get_data_user_with_token_jwt_status_200(self):
         registration_data = self.user
@@ -136,6 +150,43 @@ class TestRegisterView(APITestCase):
         id = response_login.data['user']['id']
     
         response = self.client.get(f'/api/users/{id}/')
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn('detail', response.data)
+        self.assertEqual(response.data['detail'], 'Authentication credentials were not provided.')
+
+    def test_logout_user_with_token_jwt_status_200(self):
+        registration_data = self.user
+
+        self.client.post('/api/users/register/', registration_data)
+
+        response_login = self.client.post('/api/users/login/', self.login)
+
+        token = response_login.data['token']['access']
+        id = response_login.data['user']['id']
+
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
+
+        response = self.client.patch(f'/api/users/logout/{id}/')
+        user = CustomUser.objects.filter(email=registration_data['email'])[0]
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('user', response.data)
+        self.assertIn('message', response.data)
+        self.assertEqual(response.data['user'], registration_data['email'])
+        self.assertEqual(response.data['message'], 'logout')
+        self.assertEqual(user.is_logged_in, False)
+
+    def test_lgogout_user_without_token_jwt_status_401(self):
+        registration_data = self.user
+
+        self.client.post('/api/users/register/', registration_data)
+
+        response_login = self.client.post('/api/users/login/', self.login)
+
+        id = response_login.data['user']['id']
+    
+        response = self.client.patch(f'/api/users/logout/{id}/')
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertIn('detail', response.data)

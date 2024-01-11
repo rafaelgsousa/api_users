@@ -106,15 +106,9 @@ def logout(request, id):
     
     user = get_object_or_404(CustomUser, id=id)
 
-    update = {"is_logged_in" : False}
-    result = UserSerializer(
-            instance=user,
-            data=update,
-            partial=True
-            )
+    user.is_logged_in= False
         
-    result.is_valid(raise_exception=True)
-    user.save(update_fields=list(update.keys()))
+    user.save(update_fields=list(['is_logged_in']))
 
     return Response(
         {
