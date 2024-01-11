@@ -5,14 +5,16 @@ from ..models import CustomUser
 
 
 class TestRegisterView(APITestCase):
-    def test_register_success(self):
-        registration_data = {
+    user = {
             'first_name': 'John',
             'last_name': 'Doe',
             'email': 'johndoe@example.com',
             'phone': '86911111111',
             'password': '123456789'
         }
+    
+    def test_register_success(self):
+        registration_data = self.user
 
         response = self.client.post('/api/users/register/', registration_data)
 
@@ -23,20 +25,15 @@ class TestRegisterView(APITestCase):
         self.assertEqual(response.data['Register'], 'johndoe@example.com')
 
     def test_login_sucess(self):
-        registration_data = {
-            'first_name': 'John',
-            'last_name': 'Doe',
-            'email': 'johndoe@example.com',
-            'phone': '86911111111',
-            'password': '123456789'
-        }
+        registration_data = self.user
 
         response = self.client.post('/api/users/register/', registration_data)
-        
+
         login = {
             'email': 'johndoe@example.com',
             'password': '123456789'
         }
+
         response = self.client.post('/api/users/login/', login)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -50,5 +47,7 @@ class TestRegisterView(APITestCase):
         self.assertIn('last_name', response.data['user'])
         self.assertIn('is_logged_in', response.data['user'])
         self.assertEqual(response.data['user']['is_logged_in'], True)
+
+    # def test_login_bad_password_status
 
 

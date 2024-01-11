@@ -80,15 +80,8 @@ def login(request):
             status=status.HTTP_200_OK
         )
     else:
-        update = {"login_erro" : user.login_erro + 1}
-        result = UserSerializer(
-            instance=user,
-            data=update,
-            partial=True
-            )
-        
-        result.is_valid(raise_exception=True)
-        user.save(update_fields=list(update.keys()))
+        user.login_erro += 1
+        user.save(update_fields=list(['login_erro']))
 
         if user.login_erro >= 3:
             raise PermissionDenied(detail='error: Account blocked due to excessive login errors. Contact an administrator.')
