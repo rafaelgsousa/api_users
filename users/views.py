@@ -60,21 +60,14 @@ def login(request):
         raise PermissionDenied(detail='error: User is inactive.')
 
     if check_password(password, user.password):
-        token = RefreshToken.for_user(user)
 
-        update = {"is_logged_in" : True}
+        token = RefreshToken.for_user(user)
+        user.is_logged_in = True
+        user.save(update_fields=list(['is_logged_in']))
 
         if user.login_erro > 0:
-            update.login_erro = CustomUser.LoginError.ZERO
-
-        result = UserSerializer(
-            instance=user,
-            data=update,
-            partial=True
-            )
-        
-        result.is_valid(raise_exception=True)
-        user.save(update_fields=list(update.keys()))
+            user.login_erro = CustomUser.LoginError.ZERO
+            user.save(update_fields=list(['login_erro']))
 
         return Response(
             {
@@ -120,9 +113,15 @@ def logout(request, id):
     
     user = get_object_or_404(CustomUser, id=id)
 
-    user.is_logged_in = False
-
-    user.save()
+    update = {"is_logged_in" : False}
+    result = UserSerializer(
+            instance=user,
+            data=update,
+            partial=True
+            )
+        
+    result.is_valid(raise_exception=True)
+    user.save(update_fields=list(update.keys()))
 
     return Response(
         {

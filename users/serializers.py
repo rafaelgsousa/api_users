@@ -32,7 +32,6 @@ class UserSerializer (serializers.ModelSerializer):
         return user
     
     def update(self, instance, validated_data):
-        fields_to_update_at = ['first_name', 'last_name', 'email', 'phone', 'password', 'picture', 'nv_user', 'is_active']
 
         instance.first_name = validated_data.get('first_name', instance.first_name)
         instance.last_name = validated_data.get('last_name', instance.last_name)
@@ -46,17 +45,6 @@ class UserSerializer (serializers.ModelSerializer):
 
         if password:
             instance.password = make_password(password)
-
-        for field in fields_to_update_at:
-            update_at = False
-            value = validated_data.get(field)
-            print(f'Value of {field}')
-            print(value)
-            if value is not None:
-                print('Update = True')
-                update_at = True
-            if update_at:
-                instance.update_at = timezone.now()
         
         try:
             instance.save()
@@ -64,7 +52,7 @@ class UserSerializer (serializers.ModelSerializer):
             raise serializers.ValidationError(f"Error saving changes: {e}")
 
         return instance
-    
+
     def validate(self, attrs):
         if attrs.get('first_name') == attrs.get('last_name') and attrs.get('first_name') != None and attrs.get('last_name') != None:
             raise serializers.ValidationError({
