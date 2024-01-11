@@ -49,7 +49,7 @@ class UserSerializer (serializers.ModelSerializer):
             code = VerificationCode.objects.filter(user=instance.id)
             if not code:
                 raise PermissionDenied(detail='error: No authorization for this procedure.')
-            if not code.code_verificated:
+            if not code[0].code_verificated:
                 raise PermissionDenied(detail='error: No authorization for this procedure.')
             
             instance.password = make_password(password)

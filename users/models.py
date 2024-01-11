@@ -47,7 +47,7 @@ class CustomUser(AbstractUser):
         DOIS = 2, 'Dois'
         TRES = 3, 'Tres'
     
-    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False, unique=True)
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     email = models.EmailField(max_length=50, unique=True)
@@ -75,7 +75,7 @@ class CustomUser(AbstractUser):
         return self.email
 
 class VerificationCode(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     code = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
     code_verificated = models.BooleanField(default=False)

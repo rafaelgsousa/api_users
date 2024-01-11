@@ -195,7 +195,9 @@ def change_password_before_login(request, email):
 
     result.save()
     
-    VerificationCode.objects.delete(user=user.id)
+    code_db = get_object_or_404(VerificationCode,user=user.id)
+
+    code_db.delete()
 
     return Response(
         {
@@ -290,7 +292,9 @@ def change_password_by_settings(request):
 
     result.save()
 
-    VerificationCode.objects.delete(user=user.id)
+    code = get_object_or_404(VerificationCode, user=user.id)  
+  
+    code.delete()
 
     return Response(
         {
