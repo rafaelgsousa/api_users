@@ -1,7 +1,9 @@
 from django.contrib.auth.hashers import make_password
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from rest_framework import serializers
+from rest_framework.exceptions import PermissionDenied
 
 from .models import CustomUser, Device, VerificationCode
 
@@ -44,6 +46,12 @@ class UserSerializer (serializers.ModelSerializer):
         password = validated_data.get('password')
 
         if password:
+            code = VerificationCode.objects.filter(user=instance.id)
+            if not code:
+                raise PermissionDenied(detail='error: No authorization for this procedure.')
+            if not code.code_verificated:
+                raise PermissionDenied(detail='error: No authorization for this procedure.')
+            
             instance.password = make_password(password)
         
         try:

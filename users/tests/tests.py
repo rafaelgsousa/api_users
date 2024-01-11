@@ -38,6 +38,18 @@ class TestRegisterView(APITestCase):
             'password': '12345678'
         }
     
+    update = {
+        'first_name': 'John Update'
+    }
+
+    bad_update = {
+        'is_logged_in': False
+    }
+
+    bad_update_password = {
+        'password': '987654321'
+    }
+    
     def test_register_success(self):
         registration_data = self.user
 
@@ -192,3 +204,64 @@ class TestRegisterView(APITestCase):
         self.assertIn('detail', response.data)
         self.assertEqual(response.data['detail'], 'Authentication credentials were not provided.')
 
+    def test_update_user_status_200(self):
+        registration_data = self.user
+
+        self.client.post('/api/users/register/', registration_data)
+
+        response_login = self.client.post('/api/users/login/', self.login)
+
+        token = response_login.data['token']['access']
+        id = response_login.data['user']['id']
+
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
+
+        response = self.client.patch(f'/api/users/update_user/{id}/', self.update)
+        user = CustomUser.objects.filter(email=registration_data['email'])[0]
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('user', response.data)
+        self.assertEqual(response.data['user']['email'], registration_data['email'])
+        self.assertEqual(response.data['user']['first_name'], self.update['first_name'])
+        self.assertEqual(user.is_logged_in, True)
+    
+    def test_update_user_with_unauthorized_request_status_403(self):
+        registration_data = self.user
+
+        self.client.post('/api/users/register/', registration_data)
+
+        response_login = self.client.post('/api/users/login/', self.login)
+
+        token = response_login.data['token']['access']
+        id = response_login.data['user']['id']
+
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
+
+        response = self.client.patch(f'/api/users/update_user/{id}/', self.bad_update)
+        user = CustomUser.objects.filter(email=registration_data['email'])[0]
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn('detail', response.data)
+        self.assertEqual(response.data['detail'], 'Permission denied: Update not permitted for is_logged_in.')
+        self.assertEqual(user.is_logged_in, True)
+
+    def test_update_password_without_sending_code_and_verification_status_404(self):
+        registration_data = self.user
+
+        self.client.post('/api/users/register/', registration_data)
+
+        response_login = self.client.post('/api/users/login/', self.login)
+
+        token = response_login.data['token']['access']
+        id = response_login.data['user']['id']
+
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
+
+        response = self.client.patch(f'/api/users/update_user/{id}/', self.bad_update_password)
+        print(response.data)
+        user = CustomUser.objects.filter(email=registration_data['email'])[0]
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn('detail', response.data)
+        self.assertEqual(response.data['detail'], 'error: No authorization for this procedure.')
+        self.assertEqual(user.is_logged_in, True)

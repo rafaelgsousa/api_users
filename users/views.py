@@ -185,11 +185,6 @@ def verify_code_before_login(request):
 def change_password_before_login(request, email):
 
     user = get_object_or_404(CustomUser, email=email)
-    
-    code_db = get_object_or_404(VerificationCode,user=user.id)
-
-    if not code_db.code_verificated:
-        raise PermissionDenied(detail='error: No authorization for this procedure.')
 
     result = UserSerializer(
                             instance=user,
@@ -199,8 +194,8 @@ def change_password_before_login(request, email):
     result.is_valid(raise_exception=True)
 
     result.save()
-
-    code_db.delete()
+    
+    VerificationCode.objects.delete(user=user.id)
 
     return Response(
         {
@@ -285,12 +280,6 @@ def change_password_by_settings(request):
 
     user = get_object_or_404(CustomUser,id=user_id)
     
-    code = get_object_or_404(VerificationCode, user=user.id)
-
-    if not code.code_verificated:
-        raise PermissionDenied(detail='error: No authorization for this procedure.')
-    
-
     result = UserSerializer(
         instance=user,
         data=request.data,
@@ -301,7 +290,7 @@ def change_password_by_settings(request):
 
     result.save()
 
-    code.delete()
+    VerificationCode.objects.delete(user=user.id)
 
     return Response(
         {
