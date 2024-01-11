@@ -48,6 +48,23 @@ class TestRegisterView(APITestCase):
         self.assertIn('is_logged_in', response.data['user'])
         self.assertEqual(response.data['user']['is_logged_in'], True)
 
-    # def test_login_bad_password_status
+    def test_login_bad_password_status_400_bad_request(self):
+        registration_data = self.user
+
+        response = self.client.post('/api/users/register/', registration_data)
+
+        login = {
+            'email': 'johndoe@example.com',
+            'password': '12345678'
+        }
+
+        response = self.client.post('/api/users/login/', login)
+        user = CustomUser.objects.filter(email='johndoe@example.com')[0]
+        print(user)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
+        self.assertEqual(response.data['error'],'Incorrect password or email. Three login errors lead to account lockout')
+        self.assertEqual(user.login_erro,1)
+
 
 
