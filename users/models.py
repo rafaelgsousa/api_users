@@ -1,7 +1,7 @@
 from uuid import uuid4
 
-from django.contrib.auth.models import (AbstractBaseUser, AbstractUser,
-                                        BaseUserManager, Group, Permission)
+from django.contrib.auth.models import (AbstractUser, BaseUserManager, Group,
+                                        Permission)
 from django.db import models
 
 from project import settings
