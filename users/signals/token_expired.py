@@ -1,7 +1,8 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from models import CustomUser
 from rest_framework_simplejwt.tokens import RefreshToken
+
+from ..models import CustomUser
 
 
 @receiver(post_save, sender=RefreshToken)

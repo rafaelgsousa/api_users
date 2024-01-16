@@ -1,6 +1,8 @@
-from django.contrib.auth.hashers import make_password
-from django.shortcuts import get_object_or_404
-from django.utils import timezone
+# from django.contrib.auth.hashers import make_password
+from django.contrib.auth.password_validation import validate_password
+from django.forms import ValidationError
+# from django.shortcuts import get_object_or_404
+# from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
@@ -18,6 +20,8 @@ class UserSerializer (serializers.ModelSerializer):
     nv_user = serializers.IntegerField(write_only=True, required=False)
 
     def create(self, validated_data):
+        password = validated_data.pop('password')
+
         user = CustomUser.objects.create(
             username=validated_data['email'],
             first_name=validated_data['first_name'],
@@ -25,11 +29,20 @@ class UserSerializer (serializers.ModelSerializer):
             email=validated_data['email'],
             phone=validated_data['phone'],
             picture=validated_data.get('picture', None),
-            password=make_password(validated_data['password']),
+            # password=set_password(validated_data['password']),
             nv_user=CustomUser.NivelUsuario.ZERO,
             is_logged_in=False,
             login_erro=CustomUser.LoginError.ZERO,
         )
+
+        try:
+            validate_password(password)
+        except ValidationError as e:
+            raise serializers.ValidationError({'password': e.messages})
+
+        user.set_password(password)
+
+        user.save()
         
         return user
     
@@ -43,7 +56,7 @@ class UserSerializer (serializers.ModelSerializer):
         instance.nv_user = validated_data.get('nv_user', instance.nv_user)
         instance.is_active = validated_data.get('is_active', instance.is_active)
 
-        password = validated_data.get('password')
+        password = validated_data.get('password',None)
 
         if password:
             code = VerificationCode.objects.filter(user=instance.id)
@@ -52,7 +65,12 @@ class UserSerializer (serializers.ModelSerializer):
             if not code[0].code_verificated:
                 raise PermissionDenied(detail='error: No authorization for this procedure.')
             
-            instance.password = make_password(password)
+            try:
+                validate_password(password)
+            except ValidationError as e:
+                raise serializers.ValidationError({'password': e.messages})
+
+            instance.set_password(password)
         
         try:
             instance.save()
