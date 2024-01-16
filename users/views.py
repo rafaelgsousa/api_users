@@ -94,7 +94,7 @@ def login(request):
             )
 
 @csrf_exempt
-@api_view(http_method_names=['PATCH'])
+@api_view(http_method_names=['POST'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 def logout(request, id):
@@ -107,8 +107,9 @@ def logout(request, id):
     user = get_object_or_404(CustomUser, id=id)
 
     user.is_logged_in= False
+    user.last_login_sistem= timezone.now()
         
-    user.save(update_fields=list(['is_logged_in']))
+    user.save(update_fields=list(['is_logged_in', 'last_login_sistem']))
 
     return Response(
         {
