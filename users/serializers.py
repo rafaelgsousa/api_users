@@ -1,8 +1,7 @@
 from django.contrib.auth.hashers import make_password
+from django.contrib.auth import models
 from django.contrib.auth.password_validation import validate_password
 from django.forms import ValidationError
-# from django.shortcuts import get_object_or_404
-# from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
