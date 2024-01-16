@@ -1,4 +1,4 @@
-# from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.password_validation import validate_password
 from django.forms import ValidationError
 # from django.shortcuts import get_object_or_404
@@ -20,8 +20,6 @@ class UserSerializer (serializers.ModelSerializer):
     nv_user = serializers.IntegerField(write_only=True, required=False)
 
     def create(self, validated_data):
-        password = validated_data.pop('password')
-
         user = CustomUser.objects.create(
             username=validated_data['email'],
             first_name=validated_data['first_name'],
@@ -29,25 +27,15 @@ class UserSerializer (serializers.ModelSerializer):
             email=validated_data['email'],
             phone=validated_data['phone'],
             picture=validated_data.get('picture', None),
-            # password=set_password(validated_data['password']),
+            password=make_password(validated_data['password']),
             nv_user=CustomUser.NivelUsuario.ZERO,
             is_logged_in=False,
             login_erro=CustomUser.LoginError.ZERO,
         )
 
-        try:
-            validate_password(password)
-        except ValidationError as e:
-            raise serializers.ValidationError({'password': e.messages})
-
-        user.set_password(password)
-
-        user.save()
-        
         return user
     
-    def update(self, instance, validated_data):
-
+    def update(self, instance, validated_data):        
         instance.first_name = validated_data.get('first_name', instance.first_name)
         instance.last_name = validated_data.get('last_name', instance.last_name)
         instance.email = validated_data.get('email', instance.email)
@@ -64,18 +52,8 @@ class UserSerializer (serializers.ModelSerializer):
                 raise PermissionDenied(detail='error: No authorization for this procedure.')
             if not code[0].code_verificated:
                 raise PermissionDenied(detail='error: No authorization for this procedure.')
-            
-            try:
-                validate_password(password)
-            except ValidationError as e:
-                raise serializers.ValidationError({'password': e.messages})
 
-            instance.set_password(password)
-        
-        try:
-            instance.save()
-        except Exception as e:
-            raise serializers.ValidationError(f"Error saving changes: {e}")
+            instance.password = make_password(password)
 
         return instance
 
@@ -89,6 +67,12 @@ class UserSerializer (serializers.ModelSerializer):
                 raise serializers.ValidationError({
                     "error": ["Nv_user has an invalid value"]
                 })
+        if attrs.get('password') is not None:
+            try:
+                validate_password(attrs.get('password'))
+            except ValidationError as e:
+                raise serializers.ValidationError({'password': e.messages})
+
         return super().validate(attrs)
     
 class DeviceSerializer (serializers.ModelSerializer):
