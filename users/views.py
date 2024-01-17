@@ -36,8 +36,10 @@ def register(request):
     
     return Response(
         {
-            'user_id': str(user.id),
-            'Register': user.email
+            'user': {
+                'id': str(user.id),
+                'email': user.email
+            }
         },
         status=status.HTTP_201_CREATED
     )

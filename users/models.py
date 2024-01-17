@@ -82,3 +82,14 @@ class VerificationCode(models.Model):
 class Device(models.Model):
     name = models.CharField(max_length=100)
     user = models.ForeignKey('CustomUser', on_delete=models.CASCADE)
+
+class Logger(models.Model):
+    endpoint = models.CharField(max_length=255)
+    user = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True)
+    method = models.CharField(max_length=10)
+    view = models.CharField(max_length=255)
+    status = models.IntegerField()
+    invocation_time = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.endpoint} - {self.user} - {self.method} - {self.status}"
