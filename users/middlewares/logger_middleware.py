@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 
 from ..models import CustomUser, Logger
 
@@ -9,6 +10,8 @@ class RequestLoggerMiddleware:
 
     def __call__(self, request):
         try:
+            body = json.loads(request.body.decode('utf-8')) if request.body.decode('utf-8') else None
+            
             response = self.get_response(request)
 
             if request.auth:
@@ -18,10 +21,14 @@ class RequestLoggerMiddleware:
                 id= json.loads(response.content.decode('utf-8'))['user']['id']
                 user = CustomUser.objects.get(id=id)
 
+            if body != None and 'password' in body:
+                del body['password']
+
             Logger.objects.create(
                 endpoint=request.path,
                 user=user,
                 method=request.method,
+                body= str(body),
                 view=request.resolver_match.url_name,
                 status=response.status_code,
             )

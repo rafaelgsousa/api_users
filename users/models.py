@@ -87,6 +87,7 @@ class Logger(models.Model):
     endpoint = models.CharField(max_length=255)
     user = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True)
     method = models.CharField(max_length=10)
+    body= models.CharField(max_length=255, null=True, blank=True)
     view = models.CharField(max_length=255)
     status = models.IntegerField()
     invocation_time = models.DateTimeField(auto_now_add=True)
