@@ -1,8 +1,19 @@
-from django.urls import path
+from django.urls import include, path
+from rest_framework.routers import SimpleRouter
 
+from ._views import *
 from .views import *
 
 app_name='user'
+
+view_customuser = SimpleRouter()
+view_customuser.register('', CustomUserView, basename='user-router')
+
+view_change_password_before_login = SimpleRouter()
+view_change_password_before_login.register('change_password_before_login', CodeBeforeLogin, basename='change_password_before_login')
+
+view_change_password_by_settings = SimpleRouter()
+view_change_password_by_settings.register('change_password_by_settings', CodeBySettings, basename='change_password_by_settings')
 
 urlpatterns = [
     path('register/', register, name='register'),
@@ -14,8 +25,11 @@ urlpatterns = [
     path('settings/verify_code/', verify_code_by_settings, name='verify_code_by_settings'),
     path('settings/change_password/', change_password_by_settings, name='change_password_by_setting'),
     path('logout/<uuid:id>/', logout, name='logout'),
-    path('<uuid:id>/', get_user, name='get_user'),
-    path('list/', get_users, name='get_users'),
+    path('user/<uuid:id>/', get_user, name='get_user'),
+    path('users/', get_users, name='get_users'),
     path('update_user/<uuid:id>/', update_user, name='update_user'),
     path('delete_user/<uuid:id>/', delete_user, name='delete_user'),
+    path('', include(view_customuser.urls)),
+    path('', include(view_change_password_before_login.urls)),
+    path('', include(view_change_password_by_settings.urls))
 ]

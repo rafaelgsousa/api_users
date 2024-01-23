@@ -6,7 +6,6 @@ env/
 *.pyc
 *.pyo
 __pycache__/
-users/_views/
 
 # Arquivos de configuração local
 *.sqlite3
