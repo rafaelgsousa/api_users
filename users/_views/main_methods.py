@@ -27,6 +27,7 @@ class CustomUserView(ModelViewSet):
     queryset = CustomUser.objects.filter()
     serializer_class = UserSerializer
     pagination_class = CustomUserListPagination
+    http_method_names = ['get', 'options', 'head', 'patch', 'post', 'delete']
     
     def get_object(self):
         pk = self.kwargs.get('pk','')

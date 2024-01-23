@@ -23,6 +23,7 @@ from ..serializers import *
 
 class CodeBySettings(ModelViewSet):
     serializer_class = VerifCodeSerializer
+    http_method_names = ['get', 'options', 'head', 'post', 'delete']
 
     def create(self, request):
         token = request.auth

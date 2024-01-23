@@ -23,6 +23,7 @@ from ..serializers import *
 
 class CodeBeforeLogin(ModelViewSet):
     serializer_class = VerifCodeSerializer
+    http_method_names = ['get', 'options', 'head', 'post', 'delete']
 
     def create(self, request):
         user = get_object_or_404(CustomUser, email=request.get('email',''))
