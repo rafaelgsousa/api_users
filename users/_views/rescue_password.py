@@ -1,16 +1,15 @@
 import os
 import random
 
-from django.contrib.auth.hashers import check_password
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from dotenv import load_dotenv
 from rest_framework import status
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-from rest_framework_simplejwt.tokens import RefreshToken
 
 load_dotenv()
 
@@ -20,12 +19,13 @@ from ..models import *
 from ..serializers import *
 
 
-class CodeBeforeLogin(ModelViewSet):
+class RescuePasswordViewSet(ModelViewSet):
     serializer_class = VerifCodeSerializer
-    http_method_names = ['get', 'options', 'head', 'post', 'delete']
+    http_method_names = ['options', 'head', 'post', 'patch', 'delete']
+    lookup_field = 'email'
 
-    def create(self, request):
-        user = get_object_or_404(CustomUser, email=request.get('email',''))
+    def create(self, request, *args, **kwargs):
+        user = get_object_or_404(CustomUser, email=request.data.get('email', None))
 
         code = str(random.randint(100000, 999999))
 
@@ -56,8 +56,8 @@ class CodeBeforeLogin(ModelViewSet):
             status=status.HTTP_200_OK
         )
     
-    def retrieve(self):
-        sent_code = self.request.data.get('code', '')
+    def partial_update(self, request, *args, **kwargs):
+        sent_code = request.data.get('code', None)
 
         code_req = get_object_or_404(VerificationCode,code=sent_code)
 
@@ -81,8 +81,9 @@ class CodeBeforeLogin(ModelViewSet):
                     status=status.HTTP_200_OK
                 )
 
-    def destroy(self, request):
-        user = get_object_or_404(CustomUser, email=self.request.get('email',''))
+    @action(detail=False, methods=['delete'])
+    def change_password(self, request, *args, **kwargs):
+        user = get_object_or_404(CustomUser, email=self.kwargs.get('email',None))
 
         result = UserSerializer(
                                 instance=user,

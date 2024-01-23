@@ -3,7 +3,8 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from dotenv import load_dotenv
 from rest_framework import status
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -34,11 +35,11 @@ class CustomUserView(ModelViewSet):
     permission_classes_by_action = {
         'create': [],
         'login': [],
-        'retrieve': [IsOwnerOrLevelHigher()],
-        'list': [LevelHigher()],
-        'partial_update': [IsOwnerOrLevelHigher()],
-        'destroy': [IsOwnerOrLevelHigher()],
-        'logout': [IsOwnerOrLevelHigher],
+        'retrieve': [IsOwnerOrLevelRequired],
+        'list': [LevelHigher],
+        'partial_update': [IsOwnerOrLevelRequired],
+        'destroy': [IsOwnerOrLevelRequired],
+        'logout': [IsOwnerOrLevelRequired],
     }
 
     def get_queryset(self):
@@ -57,6 +58,7 @@ class CustomUserView(ModelViewSet):
         except KeyError:
             return [permission() for permission in self.permission_classes]
     
+    @action(detail=False, methods=['post'])
     def login(self, request):
         email = request.data.get('email')
 
@@ -106,14 +108,10 @@ class CustomUserView(ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-    def logout(request, id):
-        token = request.auth
-        user_id = token['user_id']
-
-        if str(id) != user_id:
-            raise PermissionDenied(detail='error: No authorization for this procedure.')
-        
-        user = get_object_or_404(CustomUser, id=id)
+    @action(detail=True, methods=['post'])
+    def logout(self, request, pk):
+        print(pk)
+        user = get_object_or_404(CustomUser, pk=pk)
 
         user.is_logged_in= False
         user.last_login_sistem= timezone.now()

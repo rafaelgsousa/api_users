@@ -1,18 +1,17 @@
 import os
 import random
 
-from django.contrib.auth.hashers import check_password
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from dotenv import load_dotenv
 from rest_framework import status
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.tokens import RefreshToken
 
 load_dotenv()
 
@@ -22,17 +21,14 @@ from ..models import *
 from ..serializers import *
 
 
-class CodeBySettings(ModelViewSet):
+class ChangePasswordViewSet(ModelViewSet):
     serializer_class = VerifCodeSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    http_method_names = ['get', 'options', 'head', 'post', 'delete']
+    http_method_names = ['options', 'head', 'post', 'patch', 'delete']
 
     def create(self, request):
-        token = request.auth
-        user_id = token['user_id']
-
-        user = get_object_or_404(CustomUser, id=user_id)
+        user = get_object_or_404(CustomUser, id=request.user.id)
 
         code = str(random.randint(100000, 999999))
 
@@ -63,7 +59,7 @@ class CodeBySettings(ModelViewSet):
             status=status.HTTP_200_OK
         )
     
-    def retrieve(self):
+    def partial_update(self):
         sent_code = self.request.data.get('code', '')
 
         code_req = get_object_or_404(VerificationCode,code=sent_code)
@@ -87,11 +83,9 @@ class CodeBySettings(ModelViewSet):
                     status=status.HTTP_200_OK
                 )
 
-    def destroy(self, request):
-        token = request.auth
-        user_id = token['user_id']
-
-        user = get_object_or_404(CustomUser,id=user_id)
+    @action(detail=False, methods=['delete'])
+    def change_password(self, request):
+        user = get_object_or_404(CustomUser,id=request.user.id)
         
         result = UserSerializer(
             instance=user,
