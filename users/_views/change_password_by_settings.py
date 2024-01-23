@@ -5,12 +5,13 @@ from django.contrib.auth.hashers import check_password
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
 from dotenv import load_dotenv
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 
 load_dotenv()
@@ -23,6 +24,8 @@ from ..serializers import *
 
 class CodeBySettings(ModelViewSet):
     serializer_class = VerifCodeSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
     http_method_names = ['get', 'options', 'head', 'post', 'delete']
 
     def create(self, request):

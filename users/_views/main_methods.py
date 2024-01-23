@@ -16,6 +16,7 @@ load_dotenv()
 from utils import *
 
 from ..models import *
+from ..permissions import *
 from ..serializers import *
 
 
@@ -25,14 +26,36 @@ class CustomUserListPagination(PageNumberPagination):
 
 class CustomUserView(ModelViewSet):
     queryset = CustomUser.objects.filter()
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
     pagination_class = CustomUserListPagination
     http_method_names = ['get', 'options', 'head', 'patch', 'post', 'delete']
+    permission_classes_by_action = {
+        'create': [],
+        'login': [],
+        'retrieve': [IsOwnerOrLevelHigher()],
+        'list': [LevelHigher()],
+        'partial_update': [IsOwnerOrLevelHigher()],
+        'destroy': [IsOwnerOrLevelHigher()],
+        'logout': [IsOwnerOrLevelHigher],
+    }
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs
     
     def get_object(self):
         pk = self.kwargs.get('pk','')
         qs = CustomUser.objects.get(pk=pk)
+        self.check_object_permissions(self.request, qs)
         return qs
+    
+    def get_permissions(self):
+        try:
+            return [permission() for permission in self.permission_classes_by_action[self.action]]
+        except KeyError:
+            return [permission() for permission in self.permission_classes]
     
     def login(self, request):
         email = request.data.get('email')
