@@ -10,7 +10,7 @@ class TestRegisterView(APITestCase):
             'last_name': 'Doe',
             'email': 'johndoe@example.com',
             'phone': '86911111111',
-            'password': '123456789'
+            'password': 'Ca123456789'
         }
     
     user_field_already_used = {
@@ -18,7 +18,7 @@ class TestRegisterView(APITestCase):
             'last_name': 'Doe',
             'email': 'marydoe@example.com',
             'phone': '86911111111',
-            'password': '123456789'
+            'password': 'Ca123456789'
         }
     
     bad_user = {
@@ -30,12 +30,12 @@ class TestRegisterView(APITestCase):
     
     login = {
             'email': 'johndoe@example.com',
-            'password': '123456789'
+            'password': 'Ca123456789'
         }
     
     bad_login = {
             'email': 'johndoe@example.com',
-            'password': '12345678'
+            'password': 'Ca12345678'
         }
     
     update = {
@@ -118,7 +118,7 @@ class TestRegisterView(APITestCase):
     def test_login_with_incorrect_password_three_times(self):
         registration_data = self.user
 
-        response = self.client.post('/api/users/register/', registration_data)
+        response = self.client.post('/api/users/', registration_data)
         self.client.post('/api/users/login/', self.bad_login)
         self.client.post('/api/users/login/', self.bad_login)
         response = self.client.post('/api/users/login/', self.bad_login)
@@ -135,7 +135,7 @@ class TestRegisterView(APITestCase):
         self.client.post('/api/users/', registration_data)
 
         response_login = self.client.post('/api/users/login/', self.login)
-        print(response_login.data)
+        
         token = response_login.data['token']['access']
         id = response_login.data['user']['id']
 
@@ -144,13 +144,12 @@ class TestRegisterView(APITestCase):
         response = self.client.get(f'/api/users/{id}/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('user', response.data)
-        self.assertIn('email', response.data['user'])
-        self.assertEqual(response.data['user']['email'], registration_data['email'])
-        self.assertIn('first_name', response.data['user'])
-        self.assertIn('last_name', response.data['user'])
-        self.assertIn('is_logged_in', response.data['user'])
-        self.assertEqual(response.data['user']['login_erro'], 0)
+        self.assertIn('email', response.data)
+        self.assertEqual(response.data['email'], registration_data['email'])
+        self.assertIn('first_name', response.data)
+        self.assertIn('last_name', response.data)
+        self.assertIn('is_logged_in', response.data)
+        self.assertEqual(response.data['login_erro'], 0)
 
     def test_get_data_user_without_token_jwt_status_401(self):
         registration_data = self.user
@@ -248,7 +247,7 @@ class TestRegisterView(APITestCase):
     def test_update_password_without_sending_code_and_verification_status_404(self):
         registration_data = self.user
 
-        self.client.post('/api/users/register/', registration_data)
+        self.client.post('/api/users/', registration_data)
 
         response_login = self.client.post('/api/users/login/', self.login)
 
@@ -258,7 +257,7 @@ class TestRegisterView(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
 
         response = self.client.patch(f'/api/users/{id}/', self.bad_update_password)
-        print(response.data)
+
         user = CustomUser.objects.filter(email=registration_data['email'])[0]
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
