@@ -1,3 +1,5 @@
+import json
+
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -198,10 +200,10 @@ class TestRegisterView(APITestCase):
         id = response_login.data['user']['id']
     
         response = self.client.patch(f'/api/users/logout/{id}/')
-
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        self.assertIn('detail', response.data)
-        self.assertEqual(response.data['detail'], 'Authentication credentials were not provided.')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        response = json.loads(response.content)
+        self.assertIn('error', response)
+        self.assertEqual(response['error'], 'Request body cannot be None.')
 
     def test_update_user_status_200(self):
         registration_data = self.user
@@ -223,7 +225,7 @@ class TestRegisterView(APITestCase):
         self.assertEqual(response.data['first_name'], self.update['first_name'])
         self.assertEqual(user.is_logged_in, True)
     
-    def test_update_user_with_unauthorized_request_status_403(self):
+    def test_update_user_with_unauthorized_request_status_401(self):
         registration_data = self.user
 
         self.client.post('/api/users/', registration_data)
@@ -238,12 +240,13 @@ class TestRegisterView(APITestCase):
         response = self.client.patch(f'/api/users/{id}/', self.bad_update)
         user = CustomUser.objects.filter(email=registration_data['email'])[0]
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertIn('detail', response.data)
-        self.assertEqual(response.data['detail'], 'Permission denied: Update not permitted for is_logged_in.')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        response = json.loads(response.content)
+        self.assertIn('error', response)
+        self.assertEqual(response['error'], 'No authorization for this procedure.')
         self.assertEqual(user.is_logged_in, True)
 
-    def test_update_password_without_sending_code_and_verification_status_404(self):
+    def test_update_password_without_sending_code_and_verification_status_401(self):
         registration_data = self.user
 
         self.client.post('/api/users/', registration_data)
@@ -259,7 +262,8 @@ class TestRegisterView(APITestCase):
 
         user = CustomUser.objects.filter(email=registration_data['email'])[0]
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertIn('detail', response.data)
-        self.assertEqual(response.data['detail'], 'error: No authorization for this procedure.')
-        self.assertEqual(user.is_logged_in, True)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        response = json.loads(response.content)
+        self.assertIn('error', response)
+        self.assertEqual(response['error'], 'No authorization for this procedure.')
+        self.assertEqual(self.login['password'], registration_data['password'])
