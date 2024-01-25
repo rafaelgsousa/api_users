@@ -110,7 +110,6 @@ class CustomUserView(ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def logout(self, request, pk):
-        print(pk)
         user = get_object_or_404(CustomUser, pk=pk)
 
         user.is_logged_in= False
