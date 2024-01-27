@@ -20,7 +20,8 @@ urlpatterns = [
     path('logout/<uuid:pk>/', CustomUserView.as_view({'post': 'logout'}), name='user-logout'),
     path('', include(view_customuser.urls)),
     path('before_login/', include(rescue_password.urls)),
-    path('rescue_password/<str:email>/', RescuePasswordViewSet.as_view({'delete': 'change_password'}), name='rescue_password_delete'),
-    path('by_settings', include(change_password.urls)),
+    path('rescue_password/<str:email>/', RescuePasswordViewSet.as_view({'patch': 'partial_update'}), name='rescue_password_detail'),
+    path('rescue_password/<str:email>/change/', RescuePasswordViewSet.as_view({'delete': 'change_password'}), name='rescue_password_delete'),
+    path('by_settings/', include(change_password.urls)),
     path('change_password/', ChangePasswordViewSet.as_view({'delete': 'change_password'}), name='change_password_delete'),
 ]

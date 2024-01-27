@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'django_user_agents',  # required for serving swagger ui's css/js files
     'drf_yasg',
     'users',
+    'django_extensions',
 ]
 
 SWAGGER_SETTINGS = {
@@ -91,8 +92,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_user_agents.middleware.UserAgentMiddleware',
+    'users.middlewares.CheckBodyRequestMiddleware',
     'users.middlewares.RequestLoggerMiddleware',
-    'users.middlewares.CheckBodyRequestMiddleware'
 ]
 
 ROOT_URLCONF = 'project.urls'

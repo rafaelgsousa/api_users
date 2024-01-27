@@ -57,29 +57,36 @@ class RescuePasswordViewSet(ModelViewSet):
         )
     
     def partial_update(self, request, *args, **kwargs):
-        sent_code = request.data.get('code', None)
+        try:
+            sent_code = request.data.get('code', None)
 
-        code_req = get_object_or_404(VerificationCode,code=sent_code)
+            code_req = get_object_or_404(VerificationCode,code=sent_code)
 
-        if (timezone.now() - code_req.created_at).total_seconds() > 60:
-            raise ValidationError({'detail': 'The code has expired. Submit a new code.'})
-        
-        result = VerifCodeSerializer(
-                    instance=code_req,
-                    data={'code_verificated':True},
-                    partial=True
-                )
+            if (timezone.now() - code_req.created_at).total_seconds() > 60:
+                raise ValidationError({'detail': 'The code has expired. Submit a new code.'})
+            
+            result = VerifCodeSerializer(
+                        instance=code_req,
+                        data={'code_verificated':True},
+                        partial=True
+                    )
 
-        result.is_valid(raise_exception=True)
+            result.is_valid(raise_exception=True)
 
-        result.save()
+            result.save()
 
-        return Response(
-                    {
-                        'message': 'Code verified successfully.'
-                    },
-                    status=status.HTTP_200_OK
-                )
+            return Response(
+                        {
+                            'message': 'Code verified successfully.'
+                        },
+                        status=status.HTTP_200_OK
+                    )
+        except ValidationError as e:
+            return Response(
+                dict(e),
+                status=status.HTTP_408_REQUEST_TIMEOUT
+            )
+    
 
     @action(detail=False, methods=['delete'])
     def change_password(self, request, *args, **kwargs):
