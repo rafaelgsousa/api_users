@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import JsonResponse
@@ -42,14 +43,11 @@ class RequestLoggerMiddleware:
             # Casos de login e register
             user_id = get_value_for_key(response.data, 'id')
             email = get_value_for_key(response.data, 'email') if not user_id else None
-        # if not user_id and not email:
-        #     # Casos de rescue password
-        #     user_id = request.GET.get('id', None)
-        #     # print(f'user_id {user_id}')
-        #     email = request.GET.get('email', None) if not user_id else None
-        #     # print(f'email1 {email}')
-        #     email = json.loads(request_body.decode('utf-8'))['email'] if not email and 'email' in json.loads(request_body.decode('utf-8')).keys() else email
-        #     # print(f'email2 {email}')
+        if not user_id and not email:
+            # Casos de rescue password
+            user_id = get_value_for_key(request.resolver_match.kwargs, 'pk')
+            email = get_value_for_key(request.resolver_match.kwargs, 'email')
+            email = get_value_for_key(json.loads(request_body.decode('utf-8')), 'email') if not email else email
 
         if not user_id and not email and isinstance(response, JsonResponse):
             # Casos onde o body do patch será errado e pare no middleware
@@ -71,6 +69,8 @@ class RequestLoggerMiddleware:
         return user_id, email, body, view_name
 
     def log_request_data(self, request, user_id, email, body, view_name, response):
+        print(f'User: {user_id}')
+        print(f'Email: {email}')
         try:
             if user_id:
                 user = CustomUser.objects.get(id=user_id)

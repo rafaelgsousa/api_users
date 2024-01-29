@@ -15,7 +15,7 @@ class UserSerializer (serializers.ModelSerializer):
 
     password = serializers.CharField(write_only=True, required=True)
     id = serializers.UUIDField(read_only=True)
-    nv_user = serializers.IntegerField(write_only=True, required=False)
+    # nv_user = serializers.IntegerField(write_only=True, required=False)
 
     def create(self, validated_data):
         user = CustomUser.objects.create(

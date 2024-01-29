@@ -1,8 +1,4 @@
-import os
-import random
-
 from django.contrib.auth.hashers import check_password
-from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from dotenv import load_dotenv
@@ -43,7 +39,6 @@ class CustomUserView(ModelViewSet):
         'list': [LevelHigher],
         'partial_update': [IsOwnerOrLevelRequired],
         'destroy': [IsOwnerOrLevelRequired],
-        'logout': [IsOwnerOrLevelRequired],
     }
 
     def get_queryset(self):

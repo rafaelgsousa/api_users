@@ -180,7 +180,7 @@ class TestRegisterView(APITestCase):
 
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
 
-        response = self.client.post(f'/api/users/logout/{id}/')
+        response = self.client.post(f'/api/users/logout/')
         user = CustomUser.objects.filter(email=registration_data['email'])[0]
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
