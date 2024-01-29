@@ -37,19 +37,19 @@ class RequestLoggerMiddleware:
 
         # Casos com rotas que usam token
         user_id = request.user.id if request.user else None
-
+        
         if not user_id and isinstance(response, Response):
             # Casos de login e register
             user_id = get_value_for_key(response.data, 'id')
             email = get_value_for_key(response.data, 'email') if not user_id else None
-        if not user_id and not email:
-            # Casos de rescue password
-            user_id = request.GET.get('id', None)
-            print(f'user_id {user_id}')
-            email = request.GET.get('email', None) if not user_id else None
-            print(f'email1 {email}')
-            email = json.loads(request_body.decode('utf-8'))['email'] if not email and 'email' in json.loads(request_body.decode('utf-8')).keys() else email
-            print(f'email2 {email}')
+        # if not user_id and not email:
+        #     # Casos de rescue password
+        #     user_id = request.GET.get('id', None)
+        #     # print(f'user_id {user_id}')
+        #     email = request.GET.get('email', None) if not user_id else None
+        #     # print(f'email1 {email}')
+        #     email = json.loads(request_body.decode('utf-8'))['email'] if not email and 'email' in json.loads(request_body.decode('utf-8')).keys() else email
+        #     # print(f'email2 {email}')
 
         if not user_id and not email and isinstance(response, JsonResponse):
             # Casos onde o body do patch será errado e pare no middleware

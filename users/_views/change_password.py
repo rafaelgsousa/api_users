@@ -22,7 +22,6 @@ from ..serializers import *
 
 
 class ChangePasswordViewSet(ModelViewSet):
-    serializer_class = VerifCodeSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     http_method_names = ['options', 'head', 'post', 'patch', 'delete']
@@ -59,7 +58,7 @@ class ChangePasswordViewSet(ModelViewSet):
             status=status.HTTP_200_OK
         )
     
-    def partial_update(self):
+    def partial_update(self, request, *args, **kwargs):
         sent_code = self.request.data.get('code', '')
 
         code_req = get_object_or_404(VerificationCode,code=sent_code)
@@ -83,8 +82,7 @@ class ChangePasswordViewSet(ModelViewSet):
                     status=status.HTTP_200_OK
                 )
 
-    @action(detail=False, methods=['delete'])
-    def change_password(self, request):
+    def destroy(self, request, *args, **kwargs):
         user = get_object_or_404(CustomUser,id=request.user.id)
         
         result = UserSerializer(

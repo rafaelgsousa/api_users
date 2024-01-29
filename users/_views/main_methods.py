@@ -1,4 +1,8 @@
+import os
+import random
+
 from django.contrib.auth.hashers import check_password
+from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from dotenv import load_dotenv
@@ -58,7 +62,7 @@ class CustomUserView(ModelViewSet):
         except KeyError:
             return [permission() for permission in self.permission_classes]
     
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='login')
     def login(self, request):
         email = request.data.get('email')
 
@@ -108,9 +112,9 @@ class CustomUserView(ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-    @action(detail=True, methods=['post'])
-    def logout(self, request, pk):
-        user = get_object_or_404(CustomUser, pk=pk)
+    @action(detail=False, methods=['post'], url_path='logout')
+    def logout(self, request, *args, **kwargs):
+        user = get_object_or_404(CustomUser, pk=request.user.id)
 
         user.is_logged_in= False
         user.last_login_sistem= timezone.now()

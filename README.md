@@ -62,23 +62,23 @@ $ python manage.py runserver
 
 ### BaseUrl:
 ```bash
-http://127.0.0.1:8000/api/users/
+http://127.0.0.1:8000/api/users
 ```
 
 ## Endpoints:
-- `register/`: Used to register the user.
-- `login/`: Login endpoint.
-- `send_code/<str:email>/`: Endpoint to send code to the email that will be necessary to authorize password rescue/change before logging in.
-- `verify_code/`: Endpoint used to verify code sent by email.
-- `change_password/<str:email>/`: Endpoint used to change the user's password after checking the code sent by email.
-- `settings/send_code/`:  Endpoint to send code to the email that will be necessary to authorize password changes after login.
-- `settings/verify_code/`: Endpoint used to verify code sent by email, after login.
-- `settings/change_password/`: Endpoint used to change the user's password after checking the code sent by email, after login.
-- `logout/<uuid:id>/`: Endpoint to log out.
-- `<uuid:id>/`: Endpoint to retrieve data from a user.
-- `list/`: Endpoint to collect data from all users.
-- `update_user/<uuid:id>/`: Endpoint used to update a user's data.
-- `delete_user/<uuid:id>/`:  Endpoint used to delete user from the database.
+- `{BaseUrl}/`: Used to register the user - method post.
+- `{BaseUrl}/login/`: Login endpoint - method post.
+- `{BaseUrl}/logout/`: Endpoint to log out - method post.
+- `{BaseUrl}/<uuid:id>/`: Endpoint to retrieve data from a user - method get.
+- `{BaseUrl}/`: Endpoint to collect data from all users - method get.
+- `{BaseUrl}/<uuid:id>/`: Endpoint used to partial update a user's data - method patch.
+- `{BaseUrl}/<uuid:id>/`:  Endpoint used to delete user from the database - method delete.
+- `{BaseUrl}/rescue_password/before_login/`: Endpoint to send code to the email that will be necessary to authorize password rescue/change before logging in - method post.
+- `{BaseUrl}/rescue_password/before_login/<email>`: Endpoint used to verify code sent by email - method patch.
+- `{BaseUrl}/rescue_password/before_login/<email>/`: Endpoint used to change the user's password after checking the code sent by email - method delete.
+- `{BaseUrl}/change_password/settings/`:  Endpoint to send code to the email that will be necessary to authorize password changes after login - method post.
+- `{BaseUrl}/change_password/settings/<pk>`: Endpoint used to verify code sent by email, after login - method patch.
+- `{BaseUrl}/change_password/settings/<pk>`: Endpoint used to change the user's password after checking the code sent by email, after login - method delete.
 
 ### Nota:
 For the first five endpoints, no token is required
@@ -94,7 +94,7 @@ You can access the ReDoc documentation at `http://127.0.0.1:8000/redoc/`.
 ### Method: POST
 ### Endpoint
 ```bash
-register/
+{BaseUrl}/
 ```
 
 ### Body  <span style="color: red">[required]</span>
@@ -104,7 +104,7 @@ register/
     last_name: "doe",
     email: "john.doe@gmail.com",
     phone: "+55 086 999999999",
-    password: "123456789",
+    password: "S@bad0591",
 }
 ```
 
@@ -160,14 +160,14 @@ Status code - 400
 ### Method: POST
 ### Endpoint
 ```bash
-login/
+{BaseUrl}/login/
 ```
 
 ### Body  <span style="color: red">[required]</span>
 ```bash
 {
 	email: "john.doe@gmail.com",
-	password: "123456789"
+	password: "S@bad0591"
 }
 ```
 
@@ -245,7 +245,7 @@ Status code - 400
 ### Method: POST
 ### Endpoint
 ```bash
-/send_code/<str:email>/
+{BaseUrl}/rescue_password/before_login/
 ```
 
 ### Body
@@ -280,7 +280,7 @@ Status code - 404
 ### Method: PATCH
 ### Endpoint
 ```bash
-verify_code/
+{BaseUrl}/rescue_password/before_login/<email>
 ```
 
 ### Body  <span style="color: red">[required]</span>
@@ -324,16 +324,16 @@ Status code - 400
 }
 ```
 
-### Method: PATCH
+### Method: DELETE
 ### Endpoint
 ```bash
-/change_password/<str:email>/
+{BaseUrl}/rescue_password/before_login/<email>
 ```
 
 ### Body  <span style="color: red">[required]</span>
 ```bash
 {
-	password: "123456789"
+	password: "S@bad0591"
 }
 ```
 ### Responses
@@ -371,7 +371,7 @@ Status code - 403
 
 ### Method: POST
 ```bash
-settings/send_code/
+{BaseUrl}/change_password/settings/
 ```
 
 ### Bearer Token  <span style="color: red">[required]</span>
@@ -396,7 +396,7 @@ Status code - 200
 ### Method: PATCH
 ### Endpoint
 ```bash
-settings/verify_code/
+{BaseUrl}/change_password/settings/<pk>
 ```
 ### Bearer Token  <span style="color: red">[required]</span>
 ### Body  <span style="color: red">[required]</span>
@@ -440,10 +440,10 @@ Status code - 400
 }
 ```
 
-### Method PATCH
+### Method DELETE
 ### Endpoint
 ```bash
-/settings/change_password/
+{BaseUrl}/change_password/settings/<pk>
 ```
 ### Bearer Token  <span style="color: red">[required]</span>
 ### Body  <span style="color: red">[required]</span>
@@ -488,7 +488,7 @@ Status code - 403
 ### Method: PATCH
 ### Endpoint
 ```bash
-logout/<uuid:id>/
+{BaseUrl}/logout/
 ```
 ### Bearer Token  <span style="color: red">[required]</span>
 ### Body
@@ -534,7 +534,7 @@ Status code - 404
 ### Method: GET
 ### Endpoint
 ```bash
-<uuid:id>/
+{BaseUrl}/<uuid:id>/
 ```
 
 ### Bearer Token  <span style="color: red">[required]</span>
@@ -583,7 +583,7 @@ Status code - 200
 ### Method: GET
 ### Endpoint
 ```bash
-list/
+{BaseUrl}/
 ```
 ### Bearer Token  <span style="color: red">[required]</span>
 ### Body
@@ -629,7 +629,7 @@ Status code - 200
 ### Method: PATCH
 ### Endpoint
 ```bash
-update_user/<uuid:id>/
+{BaseUrl}/<uuid:id>/
 ```
 
 ### Bearer Token  <span style="color: red">[required]</span>
@@ -677,7 +677,7 @@ Status code - 200
 ### Method DELETE
 ### Endpoint
 ```bash
-/delete_user/<uuid:id>/
+{BaseUrl}/<uuid:id>/
 ```
 ### Bearer Token  <span style="color: red">[required]</span>
 ### Body
