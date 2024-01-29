@@ -66,22 +66,22 @@ http://127.0.0.1:8000/api/users
 ```
 
 ## Endpoints:
+### No Token
 - `{BaseUrl}/`: Used to register the user - method post.
 - `{BaseUrl}/login/`: Login endpoint - method post.
+- `{BaseUrl}/rescue_password/before_login/`: Endpoint to send code to the email that will be necessary to authorize password rescue/change before logging in - method post.
+- `{BaseUrl}/rescue_password/before_login/<email>`: Endpoint used to verify code sent by email - method patch.
+- `{BaseUrl}/rescue_password/before_login/<email>/`: Endpoint used to change the user's password after checking the code sent by email - method delete.
+### Token
 - `{BaseUrl}/logout/`: Endpoint to log out - method post.
 - `{BaseUrl}/<uuid:id>/`: Endpoint to retrieve data from a user - method get.
 - `{BaseUrl}/`: Endpoint to collect data from all users - method get.
 - `{BaseUrl}/<uuid:id>/`: Endpoint used to partial update a user's data - method patch.
 - `{BaseUrl}/<uuid:id>/`:  Endpoint used to delete user from the database - method delete.
-- `{BaseUrl}/rescue_password/before_login/`: Endpoint to send code to the email that will be necessary to authorize password rescue/change before logging in - method post.
-- `{BaseUrl}/rescue_password/before_login/<email>`: Endpoint used to verify code sent by email - method patch.
-- `{BaseUrl}/rescue_password/before_login/<email>/`: Endpoint used to change the user's password after checking the code sent by email - method delete.
 - `{BaseUrl}/change_password/settings/`:  Endpoint to send code to the email that will be necessary to authorize password changes after login - method post.
 - `{BaseUrl}/change_password/settings/<pk>`: Endpoint used to verify code sent by email, after login - method patch.
 - `{BaseUrl}/change_password/settings/<pk>`: Endpoint used to change the user's password after checking the code sent by email, after login - method delete.
 
-### Nota:
-For the first five endpoints, no token is required
 
 ## Swagger
 
