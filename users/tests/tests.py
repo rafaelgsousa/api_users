@@ -199,11 +199,11 @@ class TestRegisterView(APITestCase):
 
         id = response_login.data['user']['id']
     
-        response = self.client.patch(f'/api/users/logout/{id}/')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        response = self.client.post(f'/api/users/logout/')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         response = json.loads(response.content)
-        self.assertIn('error', response)
-        self.assertEqual(response['error'], 'Request body cannot be None.')
+        self.assertIn('detail', response)
+        self.assertEqual(response['detail'], 'Authentication credentials were not provided.')
 
     def test_update_user_status_200(self):
         registration_data = self.user
@@ -240,7 +240,7 @@ class TestRegisterView(APITestCase):
         response = self.client.patch(f'/api/users/{id}/', self.bad_update)
         user = CustomUser.objects.filter(email=registration_data['email'])[0]
 
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         response = json.loads(response.content)
         self.assertIn('error', response)
         self.assertEqual(response['error'], 'No authorization for this procedure.')
@@ -262,7 +262,7 @@ class TestRegisterView(APITestCase):
 
         user = CustomUser.objects.filter(email=registration_data['email'])[0]
 
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         response = json.loads(response.content)
         self.assertIn('error', response)
         self.assertEqual(response['error'], 'No authorization for this procedure.')

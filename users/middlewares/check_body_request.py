@@ -27,13 +27,13 @@ class CheckBodyRequestMiddleware:
 
     def check_request_body(self, request):
         if request.method == 'PATCH' and not request.body:
-            raise BadRequest('O corpo da requisição não pode ser vazio.')
+            raise BadRequest('The request body cannot be empty.')
 
     def check_forbidden_keys(self, request):
         if request.method == 'PATCH' and request.body:
             try:
                 request_data = json.loads(request.body)
                 if any(key in request_data for key in FORBIDDEN_KEYS):
-                    raise PermissionDenied('Sem autorização para este procedimento.')
+                    raise PermissionDenied('No authorization for this procedure.')
             except json.JSONDecodeError:
-                raise BadRequest('Formato JSON inválido no corpo da requisição.')
+                raise BadRequest('Invalid JSON format in the request body.')
