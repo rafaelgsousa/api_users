@@ -92,8 +92,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_user_agents.middleware.UserAgentMiddleware',
-    'users.middlewares.CheckBodyRequestMiddleware',
     'users.middlewares.RequestLoggerMiddleware',
+    'users.middlewares.CheckBodyRequestMiddleware',
 ]
 
 ROOT_URLCONF = 'project.urls'

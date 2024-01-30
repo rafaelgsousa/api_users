@@ -4,6 +4,7 @@ import re
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import JsonResponse
+from django.urls import resolve
 from rest_framework.response import Response
 
 from utils import get_value_for_key
@@ -43,7 +44,7 @@ class RequestLoggerMiddleware:
             # Casos de login e register
             user_id = get_value_for_key(response.data, 'id')
             email = get_value_for_key(response.data, 'email') if not user_id else None
-        if not user_id and not email:
+        if not user_id and not email and isinstance(response, Response):
             # Casos de rescue password
             user_id = get_value_for_key(request.resolver_match.kwargs, 'pk')
             email = get_value_for_key(request.resolver_match.kwargs, 'email')
@@ -51,8 +52,8 @@ class RequestLoggerMiddleware:
 
         if not user_id and not email and isinstance(response, JsonResponse):
             # Casos onde o body do patch será errado e pare no middleware
-            user_id = get_value_for_key(json.loads(response.content.decode('utf-8')), 'id')
-            email = get_value_for_key(json.loads(response.content.decode('utf-8')), 'email') if not user_id else None
+            user_id = get_value_for_key(resolve(request.path).kwargs,'pk')
+            email = get_value_for_key(resolve(request.path).kwargs,'email') if not user_id else None
 
         if hasattr(request, 'resolver_match') and request.resolver_match:
             view_name = request.resolver_match.url_name
@@ -65,12 +66,11 @@ class RequestLoggerMiddleware:
                     body = json.loads(request_body.decode('utf-8'))
                 except json.JSONDecodeError as e:
                     logger.error(f'Erro ao decodificar JSON da requisição: {e}')
+                    return JsonResponse({'error': f'{e}'}, status=500)
 
         return user_id, email, body, view_name
 
     def log_request_data(self, request, user_id, email, body, view_name, response):
-        print(f'User: {user_id}')
-        print(f'Email: {email}')
         try:
             if user_id:
                 user = CustomUser.objects.get(id=user_id)
@@ -101,3 +101,4 @@ class RequestLoggerMiddleware:
                 )
         except ObjectDoesNotExist as e:
             logger.error(f'Erro ao obter usuário: {e}')
+            return JsonResponse({'error': f'{e}'}, status=500)

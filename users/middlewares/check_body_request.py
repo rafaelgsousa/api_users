@@ -13,22 +13,27 @@ class CheckBodyRequestMiddleware:
         try:
             self.check_request_body(request)
             self.check_forbidden_keys(request)
-            response = self.get_response(request)
-            return response
-        except (BadRequest) as e:
-            return JsonResponse({'error': str(e)}, status=400)
-        except (PermissionDenied) as e:
-            return JsonResponse({'error': str(e)}, status=401)
+        except (BadRequest, PermissionDenied) as e:
+            return JsonResponse({'error': str(e)}, status=self.get_status_code(e))
+        
+        return self.get_response(request)
+
+    def get_status_code(self, exception):
+        if isinstance(exception, BadRequest):
+            return 400
+        elif isinstance(exception, PermissionDenied):
+            return 403
+        return 500
 
     def check_request_body(self, request):
         if request.method == 'PATCH' and not request.body:
-            raise BadRequest('Request body cannot be None.')
+            raise BadRequest('O corpo da requisição não pode ser vazio.')
 
     def check_forbidden_keys(self, request):
         if request.method == 'PATCH' and request.body:
             try:
-                request_data = json.loads(request.body.decode('utf-8'))
-                if any(item in request_data.keys() for item in FORBIDDEN_KEYS):
-                    raise PermissionDenied('No authorization for this procedure.')
+                request_data = json.loads(request.body)
+                if any(key in request_data for key in FORBIDDEN_KEYS):
+                    raise PermissionDenied('Sem autorização para este procedimento.')
             except json.JSONDecodeError:
-                raise BadRequest('Invalid JSON format in request body.')
+                raise BadRequest('Formato JSON inválido no corpo da requisição.')
