@@ -47,5 +47,5 @@ __pycache__/
 .cache/
 
 # Arquivos de testes
-test_*.py
-*_test.py
+# test_*.py
+# *_test.py
