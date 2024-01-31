@@ -40,10 +40,6 @@ class CustomUserView(ModelViewSet):
         'partial_update': [IsOwnerOrLevelRequired],
         'destroy': [IsOwnerOrLevelRequired],
     }
-
-    def get_queryset(self):
-        qs = super().get_queryset()
-        return qs
     
     def get_object(self):
         pk = self.kwargs.get('pk','')
