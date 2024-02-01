@@ -1,5 +1,6 @@
 asgiref==3.7.2
 cffi==1.16.0
+coverage==7.4.1
 cryptography==41.0.7
 Django==5.0
 django-extensions==3.2.3
