@@ -6,7 +6,7 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -33,8 +33,8 @@ class CustomUserView(ModelViewSet):
     pagination_class = CustomUserListPagination
     http_method_names = ['get', 'options', 'head', 'patch', 'post', 'delete']
     permission_classes_by_action = {
-        'create': [],
-        'login': [],
+        'create': [AllowAny],
+        'login': [AllowAny],
         'retrieve': [IsOwnerOrLevelRequired],
         'list': [LevelHigher],
         'partial_update': [IsOwnerOrLevelRequired],
