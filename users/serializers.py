@@ -97,34 +97,4 @@ class DeviceSerializer (serializers.ModelSerializer):
 class VerifCodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = VerificationCode
-        fields = ['user', 'code', 'created_at', 'code_verificated']
-
-    def create(self, validated_data):
-        user = VerificationCode.objects.create(
-            user = validated_data['email'],
-            code = validated_data['first_name'],
-            created_at = validated_data['last_name'],
-            code_verificated = validated_data['email'],
-        )
-
-        return user
-
-    def update(self, instance, validated_data):
-        instance.code = validated_data.get('code', instance.code)
-
-        created_at_str = validated_data.get('created_at')
-        if created_at_str:
-            instance.created_at = parse_datetime(created_at_str)
-
-        code_verificated = validated_data.get('code_verificated', instance.code_verificated)
-        instance.code_verificated = bool(code_verificated)
-
-        user_email = validated_data.get('user', instance.user.email)
-        user = CustomUser.objects.get(email=user_email)
-
-        if user:
-            instance.user = user
-        
-        instance.save()
-        
-        return instance
+        fields = '__all__'
